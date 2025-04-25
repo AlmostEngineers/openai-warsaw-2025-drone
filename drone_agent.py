@@ -1,15 +1,29 @@
 import os
 from agents import Agent, Runner, function_tool
-from typing import Dict, Any, Tuple
+from typing import Dict, Any, Tuple, TypedDict, Literal
 import asyncio
 import random
-from PIL import Image
 import base64
 from io import BytesIO
+from dotenv import load_dotenv
 
+# Load environment variables from .env file
+load_dotenv()
+
+# Verify API key is set
+if not os.getenv("OPENAI_API_KEY"):
+    raise ValueError("OPENAI_API_KEY environment variable is not set. Please set it in your .env file.")
+
+class Location(TypedDict):
+    x: float
+    y: float
 
 @function_tool
-def call_emergency_services(emergency_type: str, location: Dict[str, float], severity: int) -> str:
+def call_emergency_services(
+    emergency_type: Literal["car_crash", "fire", "medical_emergency", "natural_disaster", "suspicious_activity"],
+    location: Location,
+    severity: int
+) -> str:
     """
     Call emergency services with details about the situation.
     
@@ -24,7 +38,9 @@ def call_emergency_services(emergency_type: str, location: Dict[str, float], sev
     return f"Emergency services have been notified about {emergency_type} at location {location}"
 
 @function_tool
-def observe_emergency(emergency_type: str) -> str:
+def observe_emergency(
+    emergency_type: Literal["car_crash", "fire", "medical_emergency", "natural_disaster", "suspicious_activity"]
+) -> str:
     """
     Observe and report on the emergency situation.
     
@@ -181,7 +197,6 @@ class DroneAgent:
                 4. Immediately hand off control to the emergency agent
 
                 If no emergency is detected, proceed with the command: "{command}".""",
-                attachments=[image_path],
                 context={"image": image_data}
             )
         else:
@@ -200,7 +215,7 @@ async def main():
     
     # Example commands with image analysis
     commands = [
-        ("Take off and hover at 10 meters", "/home/bwisniewski/image6.jpg"),  # Replace with actual image path
+        ("Take off and hover at 10 meters", "/home/bwisniewski/image6.png"),  # Replace with actual image path
         # ("Move to the center of the image (0.5, 0.5)", None),
         # ("Move to the top-right corner of the image (0.9, 0.1)", None),
         # ("Move to the bottom-left corner of the image (0.1, 0.9)", None),
