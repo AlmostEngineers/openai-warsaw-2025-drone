@@ -3,6 +3,10 @@ from agents import Agent, Runner, function_tool
 from typing import Dict, Any, Tuple
 import asyncio
 import random
+from PIL import Image
+import base64
+from io import BytesIO
+
 
 @function_tool
 def call_emergency_services(emergency_type: str, location: Dict[str, float], severity: int) -> str:
@@ -88,10 +92,12 @@ def move_to_image_coordinates(x: float, y: float) -> str:
 class DroneAgent:
     def __init__(self):
         self.emergency_agent = Agent(
-            name="Emergency Situation Drone Operator",
-            instructions="""You are an emergency response drone operator. Your responsibilities:
+            name="Emergency Response Agent",
+            instructions="""You are an emergency response drone operator. Your sole responsibility is to handle emergency situations.
+
+            When you receive control:
             1. Immediately assess the emergency situation
-            2. Call appropriate emergency services
+            2. Call appropriate emergency services with location and severity
             3. Maintain safe observation of the scene
             4. Provide real-time updates to emergency services
             5. Avoid interfering with emergency response efforts
@@ -106,90 +112,106 @@ class DroneAgent:
         )
 
         self.main_agent = Agent(
-            name="Drone Operator",
-            instructions="""You are an expert in drone control and navigation with advanced emergency detection capabilities. You can do:
-            1. Flight planning and execution
-            2. Obstacle avoidance
-            3. Mission planning
-            4. Emergency detection and response
-            5. Image-based navigation
-            
-            Emergency Detection Protocol:
-            - Continuously analyze the visual feed for potential emergencies
-            - Look for signs of:
-              * Car crashes (collisions, smoke, debris)
-              * Fires (flames, smoke, people evacuating)
-              * Medical emergencies (unconscious people, injuries)
-              * Natural disasters (structural damage, people in distress)
-            - Assess the severity of any detected emergency (1-5 scale)
-            - If emergency detected, immediately hand off control to emergency agent
-            
-            Always ensure safety first. When given a command:
-            1. Break it down into safe, executable steps
-            2. Verify each step is within safe parameters
-            3. Execute commands one at a time
-            4. Confirm successful execution before proceeding
-            
-            For image-based navigation:
-            - Use coordinates between 0 and 1
-            - 0,0 is the top-left corner of the image
-            - 1,1 is the bottom-right corner of the image
-            - Always validate coordinates before movement""",
+            name="Surveillance and Detection Agent",
+            instructions="""You are a surveillance drone operator focused on detecting unusual or dangerous situations. Your primary responsibilities are:
+
+            1. Continuous Monitoring:
+               - Analyze the visual feed for any unusual or dangerous situations
+               - Look for patterns that indicate potential emergencies
+               - Monitor for sudden changes in the environment
+
+            2. Emergency Detection:
+               Look for signs of:
+               * Car crashes (collisions, smoke, debris)
+               * Fires (flames, smoke, people evacuating)
+               * Medical emergencies (unconscious people, injuries)
+               * Natural disasters (structural damage, people in distress)
+               * Suspicious activities or dangerous situations
+               * Unusual crowd behavior
+               * Structural hazards
+               * Environmental dangers
+
+            3. Assessment Protocol:
+               - Evaluate the severity of any detected situation (1-5 scale)
+               - Determine if immediate action is required
+               - If situation requires emergency response, immediately hand off to emergency agent
+
+            4. Handoff Protocol:
+               When detecting an emergency:
+               - Immediately stop current operations
+               - Prepare emergency details (type, location, severity)
+               - Hand off control to emergency agent
+               - Provide clear context about the situation
+
+            Your primary goal is to detect and identify potential emergencies, then hand off control to the emergency response agent.""",
             tools=[move_to_image_coordinates],
             handoffs=[self.emergency_agent]  # Specify that this agent can hand off to emergency_agent
         )
     
-    async def send_command(self, command: str) -> str:
-        """Send a command to the drone agent"""
-        # First check for emergencies using the main agent's analysis capabilities
-        emergency_check = await Runner.run(
-            self.main_agent,
-            input="""Analyze the current visual feed and determine if there is an emergency situation.
-            If an emergency is detected, provide the following information in JSON format:
-            {
-                "is_emergency": true/false,
-                "type": "car_crash/fire/medical_emergency/natural_disaster",
-                "location": {"x": float, "y": float},
-                "severity": 1-5
-            }
-            If no emergency is detected, return {"is_emergency": false}"""
-        )
+    async def send_command(self, command: str, image_path: str = None) -> str:
+        """Send a command to the drone agent with optional image analysis
         
-        try:
-            emergency_data = eval(emergency_check.final_output)
-        except:
-            emergency_data = {"is_emergency": False}
-        
-        if emergency_data.get("is_emergency", False):
-            print(f"\nEMERGENCY DETECTED: {emergency_data['type']}")
-            # The main agent will automatically hand off to emergency_agent
-            # when it detects an emergency due to the handoffs configuration
+        Args:
+            command: The command to execute
+            image_path: Optional path to an image file to analyze
+        """
+        if image_path:
+            # Read the image file
+            with open(image_path, 'rb') as f:
+                image_data = f.read()
+            
+            # Create a message with the image attachment and context
             result = await Runner.run(
                 self.main_agent,
-                input=f"Emergency situation detected: {emergency_data['type']} at {emergency_data['location']} with severity {emergency_data['severity']}. Take control and handle the emergency."
+                input=f"""Analyze the attached image for any unusual or dangerous situations.
+                Look specifically for:
+                - Car crashes (collisions, smoke, debris)
+                - Fires (flames, smoke, evacuations)
+                - Medical emergencies (unconscious people, injuries)
+                - Natural disasters (structural damage, distress)
+                - Suspicious activities
+                - Unusual crowd behavior
+                - Structural hazards
+                - Environmental dangers
+
+                If you detect an emergency:
+                1. Note the type of emergency
+                2. Assess the severity (1-5 scale)
+                3. Note the location in the image
+                4. Immediately hand off control to the emergency agent
+
+                If no emergency is detected, proceed with the command: "{command}".""",
+                attachments=[image_path],
+                context={"image": image_data}
             )
-            return result.final_output
+        else:
+            result = await Runner.run(
+                self.main_agent,
+                input=f"""While executing the command: "{command}", continuously monitor for any unusual or dangerous situations.
+                If you detect anything that requires emergency response, immediately hand off control to the emergency agent.
+                Otherwise, proceed with the command."""
+            )
         
-        # If no emergency, proceed with normal command
-        result = await Runner.run(self.main_agent, input=command)
         return result.final_output
 
 async def main():
     # Initialize the agent
     agent = DroneAgent()
     
-    # Example commands
+    # Example commands with image analysis
     commands = [
-        "Take off and hover at 10 meters",
-        "Move to the center of the image (0.5, 0.5)",
-        "Move to the top-right corner of the image (0.9, 0.1)",
-        "Move to the bottom-left corner of the image (0.1, 0.9)",
-        "Land safely"
+        ("Take off and hover at 10 meters", "/home/bwisniewski/image6.jpg"),  # Replace with actual image path
+        # ("Move to the center of the image (0.5, 0.5)", None),
+        # ("Move to the top-right corner of the image (0.9, 0.1)", None),
+        # ("Move to the bottom-left corner of the image (0.1, 0.9)", None),
+        ("Land safely", None)
     ]
     
-    for command in commands:
+    for command, image_path in commands:
         print(f"\nSending command: {command}")
-        response = await agent.send_command(command)
+        if image_path:
+            print(f"With image analysis: {image_path}")
+        response = await agent.send_command(command, image_path)
         print(f"Response: {response}")
 
 if __name__ == "__main__":
