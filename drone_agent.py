@@ -7,7 +7,6 @@ import random
 import base64
 from io import BytesIO
 from dotenv import load_dotenv
-import signal
 import sys
 
 # Load environment variables from .env file
@@ -217,6 +216,41 @@ def move_to_image_coordinates(x: float, y: float) -> str:
     print(f"Moving drone to image coordinates: x={actual_x:.2f}, y={actual_y:.2f}")
     return f"Successfully moved to coordinates: x={actual_x:.2f}, y={actual_y:.2f}"
 
+@function_tool
+def report_observation(observation_type: Literal["damaged_infrastructure", "smoke", "suspicious_activity", "environmental_issue", "other"],
+                      location: Location,
+                      description: str) -> str:
+    """Report a non-emergency observation that requires attention
+    
+    Args:
+        observation_type: Type of observation
+        location: Dictionary with x,y coordinates
+        description: Detailed description of the observation
+        
+    Returns:
+        str: Confirmation of the report
+    """
+    # Mock implementation
+    print(f"Reporting {observation_type} at location {location}")
+    print(f"Description: {description}")
+    return f"Reported {observation_type} at location {location}"
+
+@function_tool
+def investigate_observation(observation_type: Literal["damaged_infrastructure", "smoke", "suspicious_activity", "environmental_issue", "other"],
+                          location: Location) -> str:
+    """Investigate a reported observation
+    
+    Args:
+        observation_type: Type of observation to investigate
+        location: Dictionary with x,y coordinates
+        
+    Returns:
+        str: Investigation results
+    """
+    # Mock implementation
+    print(f"Investigating {observation_type} at location {location}")
+    return f"Investigation complete for {observation_type} at location {location}"
+
 class DroneAgent:
     def __init__(self):
         self.emergency_agent = Agent(
@@ -241,38 +275,55 @@ class DroneAgent:
             handoff_description='This agent should be called when an emergency is detected. It handles emergency situations.'
         )
 
+        self.maintenance_agent = Agent(
+            name="Maintenance and Investigation Agent",
+            instructions="""You are a maintenance and investigation drone operator. Your responsibilities are:
+
+            1. Handle non-emergency observations:
+               - Damaged infrastructure (roofs, roads, buildings)
+               - Smoke from non-emergency sources
+               - Environmental issues
+               - Other maintenance concerns
+
+            2. Investigation Protocol:
+               - First, report the observation with details
+               - Then, investigate the situation
+               - Document findings
+               - Recommend follow-up actions
+               - if investigation discovered that the problem is an emergency situation then delegate control to the emergency agent
+
+            3. Types of observations to handle:
+               - Damaged roofs or buildings
+               - Smoke from garbage or controlled burns
+               - Environmental issues (litter, pollution)
+               - Infrastructure maintenance needs
+               - Other non-emergency concerns
+            """,
+            tools=[report_observation, investigate_observation, move_to_image_coordinates],
+            handoffs=[self.emergency_agent],
+            handoff_description='This agent handles non-emergency observations and maintenance issues.'
+        )
+
         self.drone_operator_agent = Agent(
             name="Drone Operator Agent",
-            instructions="""You are a drone operator responsible for both normal operations and emergency detection.
+            instructions="""You are a drone operator responsible for monitoring and analyzing the environment.
 
             Your responsibilities are:
             1. Analyze images from the drone's camera
-            2. Determine if there is an emergency situation
-            3. If no emergency:
-               - Describe the path the drone should follow
-               - Use the follow_path function to execute the path
-            4. If emergency detected:
-               - Hand off control to the emergency response agent
-               - Provide details about the emergency situation
+            2. Identify and categorize observations:
+               - Emergency situations (hand off to emergency agent)
+               - Maintenance issues (hand off to maintenance agent)
+               - Normal conditions (continue monitoring)
 
-            Emergency situations include:
-            - Car crashes
-            - Unconscious or injured people
-            - Fires
-            - Natural disasters
-            - Suspicious activities
-            - Other dangerous situations
-
-            Normal operations:
-            - Follow predefined paths
-            - Monitor the area
-            - Maintain safe altitude and distance
-            - Avoid obstacles
+            3. For each observation:
+               - Note the location (x, y coordinates)
+               - Provide detailed description
+               - Determine appropriate response
 
             IMPORTANT: After 10 turns, you must conclude your operation.""",
             tools=[follow_path, move_to_image_coordinates],
-            handoffs=[self.emergency_agent],
-            handoff_description='This agent handles normal drone operations and detects emergencies.'
+            handoffs=[self.emergency_agent, self.maintenance_agent],
+            handoff_description='This agent monitors the environment and delegates to specialized agents when needed.'
         )
     
     async def step(self, image: Image.Image | None = None) -> str:
