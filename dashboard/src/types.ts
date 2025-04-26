@@ -1,8 +1,8 @@
 export enum ReportStatus {
-  REPORTED = "Reported",
-  IN_PROGRESS = "In Progress",
-  DISPATCHED = "Dispatched",
-  RESOLVED = "Resolved",
+  REPORTED = "REPORTED",
+  IN_PROGRESS = "IN_PROGRESS",
+  DISPATCHED = "DISPATCHED",
+  RESOLVED = "RESOLVED",
 }
 
 export interface EmergencyReport {

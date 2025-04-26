@@ -1,18 +1,39 @@
 import { useEffect, useState, useRef } from "react";
-import { mockReports } from "../mockData";
 import { EmergencyReport, ReportStatus } from "../types";
 import KanbanColumn from "./KanbanColumn";
 import Layout from "./Layout";
 import "../styles/Dashboard.scss";
+import * as db from "../../../db/mock-data.json";
+
+const readJsonData = async (): Promise<EmergencyReport[]> => {
+  return db.reports as EmergencyReport[];
+};
+
 
 export const Dashboard = () => {
   const [reports, setReports] = useState<EmergencyReport[]>([]);
   const dashboardRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    // In a real app, this would be an API call
-    setReports(mockReports);
+  // Function to fetch reports from mock-data.json
+  const fetchReports = async () => {
+    const data = await readJsonData();
+    setReports(data);
+  };
 
+  useEffect(() => {
+    // Initial fetch
+    fetchReports();
+
+    // Set up polling for updates every 5 seconds
+    const pollInterval = setInterval(fetchReports, 5000);
+
+    // Cleanup intervals on component unmount
+    return () => {
+      clearInterval(pollInterval);
+    };
+  }, []);
+
+  useEffect(() => {
     // Mouse tracking for glossy effect
     const handleMouseMove = (e: MouseEvent) => {
       // Get the element directly under the mouse pointer
@@ -51,16 +72,16 @@ export const Dashboard = () => {
   }, []);
 
   const reportedReports = reports.filter(
-    (report) => report.status === ReportStatus.REPORTED
+    (report) => report.status == ReportStatus.REPORTED
   );
   const inProgressReports = reports.filter(
-    (report) => report.status === ReportStatus.IN_PROGRESS
+    (report) => report.status == ReportStatus.IN_PROGRESS
   );
   const dispatchedReports = reports.filter(
-    (report) => report.status === ReportStatus.DISPATCHED
+    (report) => report.status == ReportStatus.DISPATCHED
   );
   const resolvedReports = reports.filter(
-    (report) => report.status === ReportStatus.RESOLVED
+    (report) => report.status == ReportStatus.RESOLVED
   );
 
   return (
