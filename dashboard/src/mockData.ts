@@ -23,6 +23,10 @@ export const mockReports: EmergencyReport[] = [
     summary:
       "Multiple vehicle collision detected on Highway A4, km 36. Two cars involved, one possibly overturned.",
     location: "51.1079° N, 17.0385° E",
+    coordinates: {
+      lat: 51.1079,
+      lng: 17.0385,
+    },
     timestamp: "2025-06-12T08:43:21Z",
     status: ReportStatus.REPORTED,
     imageUrl: ACCIDENT_IMAGE,
@@ -35,6 +39,10 @@ export const mockReports: EmergencyReport[] = [
     summary:
       "Smoke and flames detected on the 3rd floor of apartment building on Kościuszki Street. No visible casualties.",
     location: "51.1089° N, 17.0324° E",
+    coordinates: {
+      lat: 51.1089,
+      lng: 17.0324,
+    },
     timestamp: "2025-06-12T09:12:05Z",
     status: ReportStatus.IN_PROGRESS,
     imageUrl: FIRE_IMAGE,
@@ -47,6 +55,10 @@ export const mockReports: EmergencyReport[] = [
     summary:
       "Person collapsed near the central fountain in Słodowa Park. Possible cardiac event.",
     location: "51.1144° N, 17.0359° E",
+    coordinates: {
+      lat: 51.1144,
+      lng: 17.0359,
+    },
     timestamp: "2025-06-12T10:25:17Z",
     status: ReportStatus.DISPATCHED,
     imageUrl: MEDICAL_IMAGE,
@@ -59,6 +71,10 @@ export const mockReports: EmergencyReport[] = [
     summary:
       "Large tree fallen across Powstańców Śląskich Street after storm. Two lanes blocked, no vehicles damaged.",
     location: "51.1003° N, 17.0338° E",
+    coordinates: {
+      lat: 51.1003,
+      lng: 17.0338,
+    },
     timestamp: "2025-06-11T22:17:43Z",
     status: ReportStatus.RESOLVED,
     imageUrl: FALLEN_TREE_IMAGE,
@@ -71,6 +87,10 @@ export const mockReports: EmergencyReport[] = [
     summary:
       "Unknown substance leaking from tanker truck on Bierutowska Street. Creating vapor cloud, area needs evacuation.",
     location: "51.1273° N, 17.1064° E",
+    coordinates: {
+      lat: 51.1273,
+      lng: 17.1064,
+    },
     timestamp: "2025-06-12T06:55:38Z",
     status: ReportStatus.IN_PROGRESS,
     imageUrl: CHEMICAL_SPILL_IMAGE,
@@ -83,6 +103,10 @@ export const mockReports: EmergencyReport[] = [
     summary:
       "Major flooding on Świdnicka Street due to broken water main. Water level rising, affecting local businesses.",
     location: "51.1062° N, 17.0333° E",
+    coordinates: {
+      lat: 51.1062,
+      lng: 17.0333,
+    },
     timestamp: "2025-06-12T11:02:14Z",
     status: ReportStatus.REPORTED,
     imageUrl: FLOOD_IMAGE,
@@ -95,6 +119,10 @@ export const mockReports: EmergencyReport[] = [
     summary:
       "Strong gas odor detected near apartment complex on Grabiszyńska Street. Potential hazard.",
     location: "51.0997° N, 17.0174° E",
+    coordinates: {
+      lat: 51.0997,
+      lng: 17.0174,
+    },
     timestamp: "2025-06-11T19:27:55Z",
     status: ReportStatus.RESOLVED,
     imageUrl: GAS_LEAK_IMAGE,

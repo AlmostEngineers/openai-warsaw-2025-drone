@@ -1,4 +1,5 @@
 import { EmergencyReport } from "../types";
+import { Link } from "react-router-dom";
 import "../styles/ReportCard.scss";
 
 interface ReportCardProps {
@@ -105,45 +106,49 @@ const SeverityIcon = ({
 
 export const ReportCard = ({ report }: ReportCardProps) => {
   return (
-    <div className="report__card">
-      <div className="report__image-container">
-        <img
-          src={report.imageUrl}
-          alt={report.title}
-          className="report__image"
-        />
-        <div className="report__image-overlay">
-          <span className="report__drone-id">ID: {report.droneId}</span>
-        </div>
-      </div>
-
-      <div className="report__content">
-        <div className="report__header">
-          <h3 className="report__title">{report.title}</h3>
-          <span
-            className={`report__severity ${getSeverityClass(report.severity)}`}
-          >
-            <SeverityIcon severity={report.severity} />
-            {report.severity.toUpperCase()}
-          </span>
+    <Link to={`/emergency/${report.id}`} className="report__card-link">
+      <div className="report__card">
+        <div className="report__image-container">
+          <img
+            src={report.imageUrl}
+            alt={report.title}
+            className="report__image"
+          />
+          <div className="report__image-overlay">
+            <span className="report__drone-id">ID: {report.droneId}</span>
+          </div>
         </div>
 
-        <div className="report__footer">
-          <div className="report__metadata-group">
-            <span className="report__metadata report__metadata--location">
-              {report.location}
+        <div className="report__content">
+          <div className="report__header">
+            <h3 className="report__title">{report.title}</h3>
+            <span
+              className={`report__severity ${getSeverityClass(
+                report.severity
+              )}`}
+            >
+              <SeverityIcon severity={report.severity} />
+              {report.severity.toUpperCase()}
             </span>
-            <span className="report__metadata">
-              {new Date(report.timestamp).toLocaleDateString()}{" "}
-              {new Date(report.timestamp).toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-            </span>
+          </div>
+
+          <div className="report__footer">
+            <div className="report__metadata-group">
+              <span className="report__metadata report__metadata--location">
+                {report.location}
+              </span>
+              <span className="report__metadata">
+                {new Date(report.timestamp).toLocaleDateString()}{" "}
+                {new Date(report.timestamp).toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </span>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </Link>
   );
 };
 

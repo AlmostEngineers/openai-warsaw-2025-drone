@@ -10,6 +10,10 @@ export interface EmergencyReport {
   title: string;
   summary: string;
   location: string;
+  coordinates: {
+    lat: number;
+    lng: number;
+  };
   timestamp: string;
   status: ReportStatus;
   imageUrl: string;

@@ -237,4 +237,12 @@
       padding: 0 1.5rem 1.5rem 1.5rem;
     }
   }
+}
+
+/* Fix for mobile safari */
+@supports (-webkit-touch-callout: none) {
+  body, html, #root, .app__container, .dashboard, .dashboard__content {
+    height: -webkit-fill-available;
+    min-height: -webkit-fill-available;
+  }
 } 
