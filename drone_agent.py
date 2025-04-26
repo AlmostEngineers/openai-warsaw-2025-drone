@@ -48,23 +48,6 @@ def encode_image_to_base64(image: Image.Image) -> str:
     img_str = base64.b64encode(buffered.getvalue()).decode('utf-8')
     return img_str
 
-@function_tool
-def call_siren() -> None:
-    print("\nSIREN\n")
-
-@function_tool
-def follow_path() -> str:
-    """Follow a specified path with the drone
-    
-    Args:
-        path_description: Description of the path to follow
-        
-    Returns:
-        str: Status of the path following operation
-    """
-    # Mock implementation
-    print(f"Following path: \n")
-    return f"Successfully followed path"
 
 def analyze_image(image_encoded: str) -> str:
     """Analyze an image using OpenAI's API
@@ -130,106 +113,129 @@ def analyze_image(image_encoded: str) -> str:
     # print("response", response)
     return response.output_text
 
-@function_tool
-def call_emergency_services(
-    emergency_type: Literal["car_crash", "fire", "medical_emergency", "natural_disaster", "suspicious_activity", "other"],
-    location: Location,
-    severity: int
-) -> str:
-    """
-    Call emergency services with details about the situation.
-    
-    Args:
-        emergency_type: Type of emergency (car_crash, fire, etc.)
-        location: Dictionary with x,y coordinates
-        severity: Severity level (1-5)
-    """
-    # Mock emergency service call
-    print(f"Calling emergency services for {emergency_type} at coordinates {location}")
-    print(f"Severity level: {severity}")
-    return f"Emergency services have been notified about {emergency_type} at location {location}"
-
-@function_tool
-def move_to_image_coordinates(x: float, y: float) -> str:
-    """
-    Move the drone to specified coordinates on the camera image.
-    
-    Args:
-        x (float): X coordinate between 0 and 1 (0 = left edge, 1 = right edge)
-        y (float): Y coordinate between 0 and 1 (0 = top edge, 1 = bottom edge)
-    
-    Returns:
-        str: Status of the movement
-    """
-    # Validate coordinates
-    if not (0 <= x <= 1 and 0 <= y <= 1):
-        return "Error: Coordinates must be between 0 and 1"
-    
-    # Mock movement calculations
-    actual_x = x + random.uniform(-0.05, 0.05)
-    actual_y = y + random.uniform(-0.05, 0.05)
-    
-    # Clamp values to ensure they stay within bounds
-    actual_x = max(0, min(1, actual_x))
-    actual_y = max(0, min(1, actual_y))
-    
-    print(f"Moving drone to image coordinates: x={actual_x:.2f}, y={actual_y:.2f}")
-    return f"Successfully moved to coordinates: x={actual_x:.2f}, y={actual_y:.2f}"
-
-@function_tool
-def report_observation(observation_type: Literal["damaged_infrastructure", "smoke", "suspicious_activity", "environmental_issue", "other"],
-                      location: Location,
-                      description: str) -> str:
-    """Report a non-emergency observation that requires attention
-    
-    Args:
-        observation_type: Type of observation
-        location: Dictionary with x,y coordinates
-        description: Detailed description of the observation
-        
-    Returns:
-        str: Confirmation of the report
-    """
-    # Mock implementation
-    print(f"Reporting {observation_type} at location {location}")
-    print(f"Description: {description}")
-    return f"Reported {observation_type} at location {location}"
-
-@function_tool
-def investigate_observation(observation_type: Literal["damaged_infrastructure", "smoke", "suspicious_activity", "environmental_issue", "other"],
-                          location: Location) -> str:
-    """Investigate a reported observation
-    
-    Args:
-        observation_type: Type of observation to investigate
-        location: Dictionary with x,y coordinates
-        
-    Returns:
-        str: Investigation results
-    """
-    # Mock implementation
-    print(f"Investigating {observation_type} at location {location}")
-    return f"Investigation complete for {observation_type} at location {location}"
-
 class DroneAgent:
-    def __init__(self):
+    def __init__(self, 
+                 follow_path_callback,
+                 observe_and_report_emergency_callback,
+                 call_emergency_services_callback,
+                 move_to_image_coordinates_callback,
+                 report_observation_callback,
+                 investigate_observation_callback,
+                 call_siren_callback):
         self.state = 'PATROL'
 
         @function_tool
         def change_state(new_state: Literal["PATROL", "INVESTIGATION", "EMERGENCY_HANDLING", "NON_EMERGENCY_HANDLING"]):
             self.state = new_state
+            print("State changed to " + new_state)
             return "Switched to " + new_state
+
+        @function_tool
+        def call_siren() -> None:
+            call_siren_callback()
+            print("\nSIREN\n")
+
+        @function_tool
+        def follow_path() -> str:
+            """Follow a specified path with the drone
+            
+            Returns:
+                str: Status of the path following operation
+            """
+            follow_path_callback()
+            print(f"Following path: \n")
+            return f"Successfully followed path"
+
+        @function_tool
+        def call_emergency_services(
+            emergency_type: Literal["car_crash", "fire", "medical_emergency", "natural_disaster", "suspicious_activity", "other"],
+            location: Location,
+            severity: int
+        ) -> str:
+            """Call emergency services with details about the situation.
+            
+            Args:
+                emergency_type: Type of emergency (car_crash, fire, etc.)
+                location: Dictionary with x,y coordinates
+                severity: Severity level (1-5)
+            """
+            call_emergency_services_callback(emergency_type, location, severity)
+            print(f"Calling emergency services for {emergency_type} at coordinates {location}")
+            print(f"Severity level: {severity}")
+            return f"Emergency services have been notified about {emergency_type} at location {location}"
+
+        @function_tool
+        def move_to_image_coordinates(x: float, y: float) -> str:
+            """Move the drone to specified coordinates on the camera image.
+            
+            Args:
+                x (float): X coordinate between 0 and 1 (0 = left edge, 1 = right edge)
+                y (float): Y coordinate between 0 and 1 (0 = top edge, 1 = bottom edge)
+            
+            Returns:
+                str: Status of the movement
+            """
+            move_to_image_coordinates_callback(x, y)
+            # Validate coordinates
+            if not (0 <= x <= 1 and 0 <= y <= 1):
+                return "Error: Coordinates must be between 0 and 1"
+            
+            # Mock movement calculations
+            actual_x = x + random.uniform(-0.05, 0.05)
+            actual_y = y + random.uniform(-0.05, 0.05)
+            
+            # Clamp values to ensure they stay within bounds
+            actual_x = max(0, min(1, actual_x))
+            actual_y = max(0, min(1, actual_y))
+            
+            print(f"Moving drone to image coordinates: x={actual_x:.2f}, y={actual_y:.2f}")
+            return f"Successfully moved to coordinates: x={actual_x:.2f}, y={actual_y:.2f}"
+
+        @function_tool
+        def report_observation(observation_type: Literal["damaged_infrastructure", "smoke", "suspicious_activity", "environmental_issue", "other"],
+                             location: Location,
+                             description: str) -> str:
+            """Report a non-emergency observation that requires attention
+            
+            Args:
+                observation_type: Type of observation
+                location: Dictionary with x,y coordinates
+                description: Detailed description of the observation
+                
+            Returns:
+                str: Confirmation of the report
+            """
+            report_observation_callback(observation_type, location, description)
+            print(f"Reporting {observation_type} at location {location}")
+            print(f"Description: {description}")
+            return f"Reported {observation_type} at location {location}"
+
+        @function_tool
+        def investigate_observation(observation_type: Literal["damaged_infrastructure", "smoke", "suspicious_activity", "environmental_issue", "other"],
+                                  location: Location) -> str:
+            """Investigate a reported observation
+            
+            Args:
+                observation_type: Type of observation to investigate
+                location: Dictionary with x,y coordinates
+                
+            Returns:
+                str: Investigation results
+            """
+            investigate_observation_callback(observation_type, location)
+            print(f"Investigating {observation_type} at location {location}")
+            return f"Investigation complete for {observation_type} at location {location}"
 
         @function_tool
         def observe_and_report_emergency(
             emergency_type: Literal["car_crash", "fire", "medical_emergency", "natural_disaster", "suspicious_activity", "other"]
         ) -> str:
-            """
-            Observe and report on the emergency situation.
+            """Observe and report on the emergency situation.
             
             Args:
                 emergency_type: Type of emergency being observed
             """
+            observe_and_report_emergency_callback(emergency_type)
             # Mock observation
             observations = {
                 "car_crash": [
@@ -263,7 +269,6 @@ class DroneAgent:
             
             observation = random.choice(observations.get(emergency_type, ["Situation appears stable"]))
             return f"Observation: {observation}"
-
 
         self.investigation_agent = Agent(
             name="Investigation Agent",
@@ -430,8 +435,38 @@ class DroneAgent:
 
 async def main():
     try:
-        # Initialize the agent
-        agent = DroneAgent()
+        # Noop callback implementations
+        def noop_follow_path():
+            pass
+
+        def noop_observe_and_report_emergency(emergency_type):
+            pass
+
+        def noop_call_emergency_services(emergency_type, location, severity):
+            pass
+
+        def noop_move_to_image_coordinates(x, y):
+            pass
+
+        def noop_report_observation(observation_type, location, description):
+            pass
+
+        def noop_investigate_observation(observation_type, location):
+            pass
+
+        def noop_call_siren():
+            pass
+
+        # Initialize the agent with noop callbacks
+        agent = DroneAgent(
+            follow_path_callback=noop_follow_path,
+            observe_and_report_emergency_callback=noop_observe_and_report_emergency,
+            call_emergency_services_callback=noop_call_emergency_services,
+            move_to_image_coordinates_callback=noop_move_to_image_coordinates,
+            report_observation_callback=noop_report_observation,
+            investigate_observation_callback=noop_investigate_observation,
+            call_siren_callback=noop_call_siren
+        )
         
         # Load image
         image = Image.open("./image7.png")
@@ -440,6 +475,7 @@ async def main():
         print("---------------------------")
         image = Image.open("./image11.png")
         response = await agent.step(image)
+        print(f"Response: {response}")
     except Exception as e:
         print(f"Error in main: {str(e)}")
     finally:
