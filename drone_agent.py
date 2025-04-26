@@ -361,13 +361,14 @@ class DroneAgent:
 
             Your responsibilities are:
             1. Analyze images from the drone's camera
-            2. If you see something unusual change state to INVESTIGATION by calling `change_state` function
+            2. If you see something unusual change state to INVESTIGATION by calling `change_state` function and hand off control to investigation agent
             3. The investigation agent will then:
                - Parse the image description
                - Move to investigate objects
                - Determine appropriate response
             """,
             tools=[follow_path, change_state],
+            handoffs=[self.investigation_agent],
             handoff_description='This agent monitors the environment and delegates to specialized agents when needed.'
         )
     
