@@ -20,14 +20,17 @@ export const Dashboard = () => {
 
     // Mouse tracking for glossy effect
     const handleMouseMove = (e: MouseEvent) => {
-      if (!dashboardRef.current) return;
+      // Get the element directly under the mouse pointer
+      const targetElement = e.target as HTMLElement;
 
-      const cards = dashboardRef.current.querySelectorAll<HTMLElement>(
+      // Find the closest report-card or kanban-column parent element if the target itself isn't one
+      const closestCard = targetElement.closest<HTMLElement>(
         ".report-card, .kanban-column"
       );
 
-      cards.forEach((card) => {
-        const rect = card.getBoundingClientRect();
+      // Only update the CSS variables if we found a relevant element
+      if (closestCard) {
+        const rect = closestCard.getBoundingClientRect();
 
         // Calculate mouse position relative to the card
         const x = Math.max(
@@ -40,9 +43,9 @@ export const Dashboard = () => {
         );
 
         // Set CSS variables for the position as percentage
-        card.style.setProperty("--mouse-x", `${x * 100}%`);
-        card.style.setProperty("--mouse-y", `${y * 100}%`);
-      });
+        closestCard.style.setProperty("--mouse-x", `${x * 100}%`);
+        closestCard.style.setProperty("--mouse-y", `${y * 100}%`);
+      }
     };
 
     document.addEventListener("mousemove", handleMouseMove);
@@ -115,6 +118,11 @@ export const Dashboard = () => {
             <span className="info-value">
               {currentTime.toLocaleTimeString()}
             </span>
+          </div>
+          <div className="status-badge">
+            <div className="status-dot"></div>
+            <span>SYSTEM STATUS</span>
+            <strong>Online</strong>
           </div>
         </div>
       </header>

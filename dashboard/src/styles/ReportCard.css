@@ -115,6 +115,7 @@
 .report-content {
   flex: 1;
   padding: 1rem 1.25rem;
+  gap: 0.5rem;
   display: flex;
   flex-direction: column;
   min-width: 0;
@@ -207,7 +208,7 @@
 .report-metadata-group {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 0.2rem;
   width: 100%;
   overflow: hidden;
 }
