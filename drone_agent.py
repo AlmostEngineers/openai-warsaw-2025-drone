@@ -3,6 +3,14 @@ import io
 
 from agents import Agent, Runner, function_tool, trace, Handoff, FileSearchTool
 from playsound import playsound
+from agents import (
+    Agent,
+    GuardrailFunctionOutput,
+    InputGuardrail,
+    Runner,
+    function_tool,
+    trace,
+)
 from typing import Dict, Any, Tuple, TypedDict, Literal
 from PIL import Image
 import asyncio
@@ -11,9 +19,18 @@ import base64
 from io import BytesIO
 from dotenv import load_dotenv
 import sys
+import pytesseract  # Add OCR capability
+import re
 
 # Load environment variables from .env file
 load_dotenv()
+
+# Verify API key is set
+if not os.getenv("OPENAI_API_KEY"):
+    raise ValueError(
+        "OPENAI_API_KEY environment variable is not set. Please set it in your .env file."
+    )
+
 
 class Location(TypedDict):
     x: float
@@ -32,9 +49,9 @@ client = OpenAI()
 def audio_message(message: str) -> None:
     print("audio message: " + message)
     response = openai.Audio.speech.create(
-    model="tts-1",          # example model name
-    voice="alloy",          # pick a voice identifier
-    input=message
+        model="tts-1",  # example model name
+        voice="alloy",  # pick a voice identifier
+        input=message,
     )
 
     # 3. The API returns a base64-encoded audio blob
@@ -54,26 +71,26 @@ def audio_message(message: str) -> None:
 
 def encode_image_to_base64(image: Image.Image) -> str:
     """Convert PIL Image to base64 string
-    
+
     Args:
         image: PIL Image object to encode
-        
+
     Returns:
         str: Base64 encoded image string
     """
     # Convert image to bytes
     buffered = BytesIO()
     image.save(buffered, format="JPEG")
-    img_str = base64.b64encode(buffered.getvalue()).decode('utf-8')
+    img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
     return img_str
 
 
 def analyze_image(image_encoded: str) -> str:
     """Analyze an image using OpenAI's API
-    
+
     Args:
         image_encoded: Base64 encoded image string
-        
+
     Returns:
         str: Analysis result from OpenAI
     """
@@ -96,8 +113,7 @@ def analyze_image(image_encoded: str) -> str:
                     - Fires
                     - Suspicious activities
                     - Other dangerous or illegal observations
-                    """
-
+                    """,
                     # Provide your response in JSON format:
                     # [
                     # {
@@ -116,13 +132,16 @@ def analyze_image(image_encoded: str) -> str:
                 {
                     "role": "user",
                     "content": [
-                        { "type": "input_text", "text": "Analyze this image and describe what you see." },
+                        {
+                            "type": "input_text",
+                            "text": "Analyze this image and describe what you see.",
+                        },
                         {
                             "type": "input_image",
                             "image_url": f"data:image/jpeg;base64,{image_encoded}",
                         },
                     ],
-                }
+                },
             ],
         )
     except e:
@@ -131,19 +150,89 @@ def analyze_image(image_encoded: str) -> str:
     # print("response", response)
     return response.output_text
 
+
+async def check_image_security(ctx, agent, image_description: str) -> Tuple[bool, str]:
+    """
+    Check if an image contains potential security threats like prompt injection attempts.
+
+    Args:
+        image_description: Description of the image
+
+    Returns:
+        Tuple[bool, str]: (is_safe, reason)
+            - is_safe: True if image is safe, False if potential threat detected
+            - reason: Description of why image was flagged as unsafe (if applicable)
+    """
+    try:
+        # List of suspicious patterns that might indicate prompt injection
+        suspicious_patterns = [
+            r"system:",
+            r"assistant:",
+            r"user:",
+            r"ignore previous",
+            r"ignore above",
+            r"new instructions",
+            r"prompt override",
+            r"<\w+>",  # XML-like tags
+            r"function\s*\(",  # Function calls
+            r"eval\s*\(",
+            r"exec\s*\(",
+            r"import\s+\w+",
+            r"require\s+['\"].*?['\"]",
+        ]
+
+        # Check for suspicious patterns in detected text
+        for pattern in suspicious_patterns:
+            matches = re.finditer(pattern, image_description, re.IGNORECASE)
+            for match in matches:
+                return GuardrailFunctionOutput(
+                    output_info=f"Potential prompt injection detected: {match.group()}",
+                    tripwire_triggered=True,
+                )
+
+        # Check for unusually long text which might be suspicious
+        if len(image_description.strip()) > 10000:  # Arbitrary threshold
+            return GuardrailFunctionOutput(
+                output_info="Suspicious amount of text detected in image",
+                tripwire_triggered=True,
+            )
+
+        # return True, "Image passed security check"
+        return GuardrailFunctionOutput(
+            output_info="Image passed security check",
+            tripwire_triggered=False,
+        )
+
+    except Exception as e:
+        # If there's an error in security checking, fail closed (assume unsafe)
+        return GuardrailFunctionOutput(
+            output_info=f"Security check failed: {str(e)}",
+            tripwire_triggered=True,
+        )
+
+
 class DroneAgent:
-    def __init__(self, 
-                 follow_path_callback,
-                 observe_and_report_emergency_callback,
-                 call_emergency_services_callback,
-                 move_to_image_coordinates_callback,
-                 report_observation_callback,
-                 investigate_observation_callback,
-                 call_siren_callback):
-        self.state = 'PATROL'
+    def __init__(
+        self,
+        follow_path_callback,
+        observe_and_report_emergency_callback,
+        call_emergency_services_callback,
+        move_to_image_coordinates_callback,
+        report_observation_callback,
+        investigate_observation_callback,
+        call_siren_callback,
+    ):
+        self.state = "PATROL"
 
         @function_tool
-        def change_state(new_state: Literal["PATROL", "INVESTIGATION", "EMERGENCY_HANDLING", "NON_EMERGENCY_HANDLING"]):
+        def change_state(
+            new_state: Literal[
+                "PATROL",
+                "INVESTIGATION",
+                "EMERGENCY_HANDLING",
+                "NON_EMERGENCY_HANDLING",
+            ],
+        ):
             self.state = new_state
             print("State changed to " + new_state)
             return "Switched to " + new_state
@@ -156,7 +245,7 @@ class DroneAgent:
         @function_tool
         def follow_path() -> str:
             """Follow a specified path with the drone
-            
+
             Returns:
                 str: Status of the path following operation
             """
@@ -166,30 +255,39 @@ class DroneAgent:
 
         @function_tool
         def call_emergency_services(
-            emergency_type: Literal["car_crash", "fire", "medical_emergency", "natural_disaster", "suspicious_activity", "other"],
+            emergency_type: Literal[
+                "car_crash",
+                "fire",
+                "medical_emergency",
+                "natural_disaster",
+                "suspicious_activity",
+                "other",
+            ],
             location: Location,
-            severity: int
+            severity: int,
         ) -> str:
             """Call emergency services with details about the situation.
-            
+
             Args:
                 emergency_type: Type of emergency (car_crash, fire, etc.)
                 location: Dictionary with x,y coordinates
                 severity: Severity level (1-5)
             """
             call_emergency_services_callback(emergency_type, location, severity)
-            print(f"Calling emergency services for {emergency_type} at coordinates {location}")
+            print(
+                f"Calling emergency services for {emergency_type} at coordinates {location}"
+            )
             print(f"Severity level: {severity}")
             return f"Emergency services have been notified about {emergency_type} at location {location}"
 
         @function_tool
         def move_to_image_coordinates(x: float, y: float) -> str:
             """Move the drone to specified coordinates on the camera image.
-            
+
             Args:
                 x (float): X coordinate between 0 and 1 (0 = left edge, 1 = right edge)
                 y (float): Y coordinate between 0 and 1 (0 = top edge, 1 = bottom edge)
-            
+
             Returns:
                 str: Status of the movement
             """
@@ -197,29 +295,41 @@ class DroneAgent:
             # Validate coordinates
             if not (0 <= x <= 1 and 0 <= y <= 1):
                 return "Error: Coordinates must be between 0 and 1"
-            
+
             # Mock movement calculations
             actual_x = x + random.uniform(-0.05, 0.05)
             actual_y = y + random.uniform(-0.05, 0.05)
-            
+
             # Clamp values to ensure they stay within bounds
             actual_x = max(0, min(1, actual_x))
             actual_y = max(0, min(1, actual_y))
-            
-            print(f"Moving drone to image coordinates: x={actual_x:.2f}, y={actual_y:.2f}")
-            return f"Successfully moved to coordinates: x={actual_x:.2f}, y={actual_y:.2f}"
+
+            print(
+                f"Moving drone to image coordinates: x={actual_x:.2f}, y={actual_y:.2f}"
+            )
+            return (
+                f"Successfully moved to coordinates: x={actual_x:.2f}, y={actual_y:.2f}"
+            )
 
         @function_tool
-        def report_observation(observation_type: Literal["damaged_infrastructure", "smoke", "suspicious_activity", "environmental_issue", "other"],
-                             location: Location,
-                             description: str) -> str:
+        def report_observation(
+            observation_type: Literal[
+                "damaged_infrastructure",
+                "smoke",
+                "suspicious_activity",
+                "environmental_issue",
+                "other",
+            ],
+            location: Location,
+            description: str,
+        ) -> str:
             """Report a non-emergency observation that requires attention
-            
+
             Args:
                 observation_type: Type of observation
                 location: Dictionary with x,y coordinates
                 description: Detailed description of the observation
-                
+
             Returns:
                 str: Confirmation of the report
             """
@@ -229,27 +339,44 @@ class DroneAgent:
             return f"Reported {observation_type} at location {location}"
 
         @function_tool
-        def investigate_observation(observation_type: Literal["damaged_infrastructure", "smoke", "suspicious_activity", "environmental_issue", "other"],
-                                  location: Location) -> str:
+        def investigate_observation(
+            observation_type: Literal[
+                "damaged_infrastructure",
+                "smoke",
+                "suspicious_activity",
+                "environmental_issue",
+                "other",
+            ],
+            location: Location,
+        ) -> str:
             """Investigate a reported observation
-            
+
             Args:
                 observation_type: Type of observation to investigate
                 location: Dictionary with x,y coordinates
-                
+
             Returns:
                 str: Investigation results
             """
             investigate_observation_callback(observation_type, location)
             print(f"Investigating {observation_type} at location {location}")
-            return f"Investigation complete for {observation_type} at location {location}"
+            return (
+                f"Investigation complete for {observation_type} at location {location}"
+            )
 
         @function_tool
         def observe_and_report_emergency(
-            emergency_type: Literal["car_crash", "fire", "medical_emergency", "natural_disaster", "suspicious_activity", "other"]
+            emergency_type: Literal[
+                "car_crash",
+                "fire",
+                "medical_emergency",
+                "natural_disaster",
+                "suspicious_activity",
+                "other",
+            ],
         ) -> str:
             """Observe and report on the emergency situation.
-            
+
             Args:
                 emergency_type: Type of emergency being observed
             """
@@ -260,32 +387,32 @@ class DroneAgent:
                     "Two vehicles involved in collision",
                     "One vehicle appears to be smoking",
                     "No visible movement from inside vehicles",
-                    "Debris scattered across the road"
+                    "Debris scattered across the road",
                 ],
                 "fire": [
                     "Large flames visible from building",
                     "Smoke billowing from multiple windows",
                     "People evacuating the area",
-                    "Fire spreading to adjacent structures"
+                    "Fire spreading to adjacent structures",
                 ],
                 "medical_emergency": [
                     "Person appears unconscious on the ground",
                     "Bystanders attempting to provide assistance",
                     "No visible injuries from current position",
-                    "Emergency medical equipment being prepared"
+                    "Emergency medical equipment being prepared",
                 ],
                 "natural_disaster": [
                     "Significant structural damage visible",
                     "People seeking shelter",
                     "Emergency response teams mobilizing",
-                    "Infrastructure damage in multiple locations"
+                    "Infrastructure damage in multiple locations",
                 ],
-                "other": [
-                    "big cow visible"
-                ]
+                "other": ["big cow visible"],
             }
-            
-            observation = random.choice(observations.get(emergency_type, ["Situation appears stable"]))
+
+            observation = random.choice(
+                observations.get(emergency_type, ["Situation appears stable"])
+            )
             return f"Observation: {observation}"
 
         self.investigation_agent = Agent(
@@ -316,7 +443,8 @@ class DroneAgent:
             """,
             tools=[move_to_image_coordinates, change_state],
             # handoffs=[self.emergency_agent, self.maintenance_agent],
-            handoff_description='This agent investigates objects detected in images.'
+            handoff_description="This agent investigates objects detected in images.",
+            input_guardrails=[InputGuardrail(guardrail_function=check_image_security)],
         )
 
         self.emergency_agent = Agent(
@@ -337,8 +465,15 @@ class DroneAgent:
             4. Maintain safe distance from the scene
             5. Continue until emergency services arrive or situation is resolved
             """,
-            tools=[call_siren, audio_message, call_emergency_services, observe_and_report_emergency, move_to_image_coordinates],
-            handoff_description='This agent should be called when an emergency is detected. It handles emergency situations.'
+            tools=[
+                call_siren,
+                audio_message,
+                call_emergency_services,
+                observe_and_report_emergency,
+                move_to_image_coordinates,
+            ],
+            handoff_description="This agent should be called when an emergency is detected. It handles emergency situations.",
+            input_guardrails=[InputGuardrail(guardrail_function=check_image_security)],
         )
 
         self.maintenance_agent = Agent(
@@ -366,11 +501,16 @@ class DroneAgent:
                - Infrastructure maintenance needs
                - Other non-emergency concerns
             """,
-            tools=[report_observation, investigate_observation, move_to_image_coordinates, audio_message],
+            tools=[
+                report_observation,
+                investigate_observation,
+                move_to_image_coordinates,
+                audio_message,
+            ],
             handoffs=[self.emergency_agent],
-            handoff_description='This agent handles non-emergency observations and maintenance issues.'
+            handoff_description="This agent handles non-emergency observations and maintenance issues.",
+            input_guardrails=[InputGuardrail(guardrail_function=check_image_security)],
         )
-
 
         self.drone_operator_agent = Agent(
             name="Drone Operator Agent",
@@ -382,15 +522,16 @@ class DroneAgent:
             """,
             tools=[follow_path, change_state],
             handoffs=[self.investigation_agent],
-            handoff_description='This agent monitors the environment and delegates to specialized agents when needed.'
+            handoff_description="This agent monitors the environment and delegates to specialized agents when needed.",
+            input_guardrails=[InputGuardrail(guardrail_function=check_image_security)],
         )
-    
+
     async def step(self, image: Image.Image | None = None) -> str:
         """Process a single step of the drone agent with optional image analysis
-        
+
         Args:
             image: Optional PIL Image object to analyze
-            
+
         Returns:
             str: Response from the agent
         """
@@ -399,30 +540,34 @@ class DroneAgent:
 
         try:
             # Ensure image is in RGB mode
-            if image.mode != 'RGB':
-                image = image.convert('RGB')
-            
+            if image.mode != "RGB":
+                image = image.convert("RGB")
+
             # Encode image to base64
             image_encoded = encode_image_to_base64(image)
-            
+
             # Analyze image
             with trace("drone_operation"):
                 img_desc = analyze_image(image_encoded)
-                print("Image description:\n", img_desc, end='\n --- end of image description ---\n\n')
-                
-                if self.state == 'PATROL':
+                print(
+                    "Image description:\n",
+                    img_desc,
+                    end="\n --- end of image description ---\n\n",
+                )
+
+                if self.state == "PATROL":
                     result = await Runner.run(
                         self.drone_operator_agent,
                         input=f"""Analyze the image and determine if investigation is needed.
                         Image analysis: {img_desc}""",
                     )
-                elif self.state == 'INVESTIGATION':
+                elif self.state == "INVESTIGATION":
                     result = await Runner.run(
                         self.investigation_agent,
                         input=f"""Investigate the objects detected in this image.
                         Image description: {img_desc}""",
                     )
-                elif self.state == 'EMERGENCY_HANDLING':
+                elif self.state == "EMERGENCY_HANDLING":
                     result = await Runner.run(
                         self.emergency_agent,
                         input=f"""Handle the emergency situation.
@@ -431,7 +576,7 @@ class DroneAgent:
                         If the situation is resolved or emergency services have arrived, change state to PATROL.
                         Otherwise, continue emergency response and observe.""",
                     )
-                elif self.state == 'NON_EMERGENCY_HANDLING':
+                elif self.state == "NON_EMERGENCY_HANDLING":
                     result = await Runner.run(
                         self.maintenance_agent,
                         input=f"""Handle the non-emergency situation.
@@ -442,10 +587,11 @@ class DroneAgent:
                     )
                 else:
                     raise ValueError(f"Unknown state: {self.state}")
-            
+
             return result.final_output
         except Exception as e:
             return f"Error during operation: {str(e)}"
+
 
 async def main():
     try:
@@ -479,9 +625,9 @@ async def main():
             move_to_image_coordinates_callback=noop_move_to_image_coordinates,
             report_observation_callback=noop_report_observation,
             investigate_observation_callback=noop_investigate_observation,
-            call_siren_callback=noop_call_siren
+            call_siren_callback=noop_call_siren,
         )
-        
+
         # Load image
         image = Image.open("./image7.png")
         response = await agent.step(image)
@@ -495,6 +641,7 @@ async def main():
     finally:
         print("Cleaning up and exiting...")
 
+
 if __name__ == "__main__":
     try:
         asyncio.run(main())
@@ -503,4 +650,4 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"Unexpected error: {str(e)}")
     finally:
-        sys.exit(0) 
+        sys.exit(0)
