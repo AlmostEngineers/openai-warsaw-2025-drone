@@ -1,0 +1,274 @@
+.report-card {
+  background: rgba(26, 32, 44, 0.7);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: row;
+  height: 130px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  position: relative;
+  isolation: isolate;
+}
+
+.report-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+/* Improved highlight effect that follows cursor */
+.report-card::before {
+  display: none; /* Remove previous animation-based effect */
+}
+
+/* Cursor-following glossy effect */
+.report-card::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 5;
+  background: radial-gradient(
+    500px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+    rgba(99, 179, 237, 0.07),
+    rgba(66, 153, 225, 0.04) 35%,
+    transparent 60%
+  );
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.report-card:hover::after {
+  opacity: 1;
+}
+
+.report-image-container {
+  width: 130px;
+  min-width: 130px;
+  height: 130px;
+  position: relative;
+  overflow: hidden;
+  background-color: #2d3748;
+}
+
+.report-image-container::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 70px;
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.7) 0%,
+    rgba(0, 0, 0, 0) 100%
+  );
+  z-index: 1;
+}
+
+.report-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.report-card:hover .report-image {
+  transform: scale(1.08);
+}
+
+.image-overlay {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  z-index: 2;
+}
+
+.drone-id {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: white;
+  background-color: rgba(0, 0, 0, 0.6);
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.drone-id::before {
+  content: "📡";
+  font-size: 0.75rem;
+}
+
+.report-content {
+  flex: 1;
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.report-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.report-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #f7fafc;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.4;
+  text-align: left;
+}
+
+.severity-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.2rem 0.6rem;
+  border-radius: 6px;
+  width: fit-content;
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.severity-badge::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: -1;
+  opacity: 0.15;
+  border-radius: inherit;
+}
+
+.severity-critical {
+  color: #fc8181;
+}
+
+.severity-critical::before {
+  background: linear-gradient(90deg, #fc8181 0%, #e53e3e 100%);
+}
+
+.severity-high {
+  color: #f6ad55;
+}
+
+.severity-high::before {
+  background: linear-gradient(90deg, #f6ad55 0%, #dd6b20 100%);
+}
+
+.severity-medium {
+  color: #fbd38d;
+}
+
+.severity-medium::before {
+  background: linear-gradient(90deg, #fbd38d 0%, #d69e2e 100%);
+}
+
+.severity-low {
+  color: #68d391;
+}
+
+.severity-low::before {
+  background: linear-gradient(90deg, #68d391 0%, #38a169 100%);
+}
+
+.report-footer {
+  margin-top: auto;
+}
+
+.report-metadata-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  width: 100%;
+  overflow: hidden;
+}
+
+.report-metadata {
+  font-size: 0.75rem;
+  color: #a0aec0;
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+  max-width: 100%;
+}
+
+.report-metadata::before {
+  content: "";
+  display: inline-block;
+  width: 3px;
+  height: 3px;
+  background-color: currentColor;
+  border-radius: 50%;
+  margin-right: 6px;
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+.report-metadata.location {
+  width: 100%;
+  font-weight: 500;
+  color: #cbd5e0;
+  letter-spacing: -0.01em;
+}
+
+/* For smaller screens */
+@media (max-width: 768px) {
+  .report-card {
+    height: 120px;
+  }
+
+  .report-image-container {
+    width: 120px;
+    min-width: 120px;
+    height: 120px;
+  }
+
+  .report-content {
+    padding: 0.75rem 1rem;
+  }
+
+  .report-title {
+    font-size: 0.9rem;
+  }
+
+  .report-header {
+    gap: 0.35rem;
+  }
+
+  .severity-badge {
+    font-size: 0.65rem;
+    padding: 0.15rem 0.5rem;
+  }
+}
