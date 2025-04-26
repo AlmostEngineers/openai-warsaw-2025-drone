@@ -47,6 +47,10 @@ client = OpenAI()
 
 @function_tool
 def audio_message(message: str) -> None:
+    """
+    Play given message over the speakers as audio.
+    """
+
     print("audio message: " + message)
     response = openai.Audio.speech.create(
         model="tts-1",  # example model name
