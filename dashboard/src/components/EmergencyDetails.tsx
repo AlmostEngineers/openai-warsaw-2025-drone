@@ -3,9 +3,9 @@ import { useParams, Link } from "react-router-dom";
 import { MapContainer, TileLayer, Circle, Popup, useMap } from "react-leaflet";
 import Layout from "./Layout";
 import { EmergencyReport } from "../types";
-import { mockReports } from "../mockData";
 import "../styles/EmergencyDetails.scss";
 import "leaflet/dist/leaflet.css";
+import * as db from "../../../db/mock-data.json";
 
 // Custom Pulsing Dot component that adds a CSS class after mount
 const PulsingDot = ({
@@ -195,6 +195,7 @@ export const EmergencyDetails = () => {
 
   useEffect(() => {
     // In a real app, this would be an API call
+    const mockReports = db.reports as EmergencyReport[];
     const foundReport = mockReports.find((r) => r.id === id);
     setReport(foundReport || null);
 
