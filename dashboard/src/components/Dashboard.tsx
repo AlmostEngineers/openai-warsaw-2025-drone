@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { mockReports } from "../mockData";
 import { EmergencyReport, ReportStatus } from "../types";
 import KanbanColumn from "./KanbanColumn";
-import "../styles/Dashboard.css";
+import "../styles/Dashboard.scss";
 
 export const Dashboard = () => {
   const [reports, setReports] = useState<EmergencyReport[]>([]);
@@ -25,7 +25,7 @@ export const Dashboard = () => {
 
       // Find the closest report-card or kanban-column parent element if the target itself isn't one
       const closestCard = targetElement.closest<HTMLElement>(
-        ".report-card, .kanban-column"
+        ".report__card, .kanban__column"
       );
 
       // Only update the CSS variables if we found a relevant element
@@ -71,15 +71,15 @@ export const Dashboard = () => {
 
   return (
     <div className="dashboard" ref={dashboardRef}>
-      <header className="dashboard-header">
-        <div className="header-logo">
+      <header className="dashboard__header">
+        <div className="dashboard__logo">
           <svg
             width="40"
             height="40"
             viewBox="0 0 24 24"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
-            className="logo-icon"
+            className="dashboard__logo-icon"
           >
             <path
               d="M12 2L4 7L12 12L20 7L12 2Z"
@@ -106,39 +106,39 @@ export const Dashboard = () => {
               strokeLinejoin="round"
             />
           </svg>
-          <h1 className="header-title">DroneWatch</h1>
+          <h1 className="dashboard__logo-title">DroneWatch</h1>
         </div>
-        <div className="header-info">
-          <div className="info-box">
-            <span className="info-label">Active Drones</span>
-            <span className="info-value">42</span>
+        <div className="dashboard__info">
+          <div className="dashboard__info-box">
+            <span className="dashboard__info-box-label">Active Drones</span>
+            <span className="dashboard__info-box-value">42</span>
           </div>
-          <div className="info-box">
-            <span className="info-label">Current Time</span>
-            <span className="info-value">
+          <div className="dashboard__info-box">
+            <span className="dashboard__info-box-label">Current Time</span>
+            <span className="dashboard__info-box-value">
               {currentTime.toLocaleTimeString()}
             </span>
           </div>
-          <div className="status-badge">
-            <div className="status-dot"></div>
-            <span>SYSTEM STATUS</span>
-            <strong>Online</strong>
+          <div className="dashboard__status-badge">
+            <div className="dashboard__status-badge-dot"></div>
+            <span className="dashboard__status-badge-label">SYSTEM STATUS</span>
+            <strong className="dashboard__status-badge-value">Online</strong>
           </div>
         </div>
       </header>
 
-      <div className="dashboard-content">
-        <div className="dashboard-heading">
-          <div className="title-area">
-            <h2 className="dashboard-title">Emergency Response Dashboard</h2>
-            <p className="dashboard-subtitle">
+      <div className="dashboard__content">
+        <div className="dashboard__heading">
+          <div className="dashboard__title-area">
+            <h2 className="dashboard__title">Emergency Response Dashboard</h2>
+            <p className="dashboard__subtitle">
               Real-time monitoring of emergency situations detected by
               autonomous drones
             </p>
           </div>
         </div>
 
-        <div className="kanban-container">
+        <div className="dashboard__kanban-container">
           <KanbanColumn
             title={ReportStatus.REPORTED}
             reports={reportedReports}

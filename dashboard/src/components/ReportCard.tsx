@@ -1,5 +1,5 @@
 import { EmergencyReport } from "../types";
-import "../styles/ReportCard.css";
+import "../styles/ReportCard.scss";
 
 interface ReportCardProps {
   report: EmergencyReport;
@@ -8,13 +8,13 @@ interface ReportCardProps {
 const getSeverityClass = (severity: EmergencyReport["severity"]) => {
   switch (severity) {
     case "critical":
-      return "severity-critical";
+      return "report__severity--critical";
     case "high":
-      return "severity-high";
+      return "report__severity--high";
     case "medium":
-      return "severity-medium";
+      return "report__severity--medium";
     case "low":
-      return "severity-low";
+      return "report__severity--low";
     default:
       return "";
   }
@@ -105,33 +105,35 @@ const SeverityIcon = ({
 
 export const ReportCard = ({ report }: ReportCardProps) => {
   return (
-    <div className="report-card">
-      <div className="report-image-container">
+    <div className="report__card">
+      <div className="report__image-container">
         <img
           src={report.imageUrl}
           alt={report.title}
-          className="report-image"
+          className="report__image"
         />
-        <div className="image-overlay">
-          <span className="drone-id">ID: {report.droneId}</span>
+        <div className="report__image-overlay">
+          <span className="report__drone-id">ID: {report.droneId}</span>
         </div>
       </div>
 
-      <div className="report-content">
-        <div className="report-header">
-          <h3 className="report-title">{report.title}</h3>
+      <div className="report__content">
+        <div className="report__header">
+          <h3 className="report__title">{report.title}</h3>
           <span
-            className={`severity-badge ${getSeverityClass(report.severity)}`}
+            className={`report__severity ${getSeverityClass(report.severity)}`}
           >
             <SeverityIcon severity={report.severity} />
             {report.severity.toUpperCase()}
           </span>
         </div>
 
-        <div className="report-footer">
-          <div className="report-metadata-group">
-            <span className="report-metadata location">{report.location}</span>
-            <span className="report-metadata date">
+        <div className="report__footer">
+          <div className="report__metadata-group">
+            <span className="report__metadata report__metadata--location">
+              {report.location}
+            </span>
+            <span className="report__metadata">
               {new Date(report.timestamp).toLocaleDateString()}{" "}
               {new Date(report.timestamp).toLocaleTimeString([], {
                 hour: "2-digit",

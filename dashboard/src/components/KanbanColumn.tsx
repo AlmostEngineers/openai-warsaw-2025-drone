@@ -1,6 +1,6 @@
 import { EmergencyReport, ReportStatus } from "../types";
 import ReportCard from "./ReportCard";
-import "../styles/KanbanColumn.css";
+import "../styles/KanbanColumn.scss";
 
 interface KanbanColumnProps {
   title: ReportStatus;
@@ -11,13 +11,13 @@ interface KanbanColumnProps {
 const getColumnColor = (status: ReportStatus) => {
   switch (status) {
     case ReportStatus.REPORTED:
-      return "column-reported";
+      return "kanban__column--reported";
     case ReportStatus.IN_PROGRESS:
-      return "column-in-progress";
+      return "kanban__column--in-progress";
     case ReportStatus.DISPATCHED:
-      return "column-dispatched";
+      return "kanban__column--dispatched";
     case ReportStatus.RESOLVED:
-      return "column-resolved";
+      return "kanban__column--resolved";
     default:
       return "";
   }
@@ -111,20 +111,20 @@ const StatusIcon = ({ status }: { status: ReportStatus }) => {
 
 export const KanbanColumn = ({ title, reports, count }: KanbanColumnProps) => {
   return (
-    <div className={`kanban-column ${getColumnColor(title)}`}>
-      <div className="column-header">
-        <h2 className="column-title">
+    <div className={`kanban__column ${getColumnColor(title)}`}>
+      <div className="kanban__header">
+        <h2 className="kanban__title">
           <StatusIcon status={title} />
           <span>{title}</span>
         </h2>
-        <span className="column-badge">
+        <span className="kanban__badge">
           {count} {count === 1 ? "report" : "reports"}
         </span>
       </div>
 
-      <div className="column-content">
+      <div className="kanban__content">
         {reports.length === 0 ? (
-          <div className="empty-message">
+          <div className="kanban__empty-message">
             <svg
               width="24"
               height="24"
