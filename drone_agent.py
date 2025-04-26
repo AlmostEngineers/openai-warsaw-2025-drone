@@ -50,7 +50,7 @@ def encode_image_to_base64(image: Image.Image) -> str:
     return img_str
 
 @function_tool
-def follow_path(path_description: str) -> str:
+def follow_path() -> str:
     """Follow a specified path with the drone
     
     Args:
@@ -60,8 +60,8 @@ def follow_path(path_description: str) -> str:
         str: Status of the path following operation
     """
     # Mock implementation
-    print(f"Following path: {path_description}")
-    return f"Successfully followed path: {path_description}"
+    print(f"Following path: \n")
+    return f"Successfully followed path"
 
 def analyze_image(image_encoded: str) -> str:
     """Analyze an image using OpenAI's API
@@ -79,13 +79,13 @@ def analyze_image(image_encoded: str) -> str:
                 {
                     "role": "system",
                     "content": """
-                    You are a drone operator analyzing images for both normal operations and emergency situations.
+                    You are a great drone operator analyzing images and describing its content.
                     Your task is to:
                     1. Analyze the image content
                     2. Identify objects and situations
                     3. Describe what you see and give coordinates (x, y) for every object/situation. x and y must be normalized by image width and height so it is between 0 and 1
 
-                    Emergency situations include:
+                    Give special care to:
                     - Car crashes
                     - Unconscious or injured people
                     - Fires
@@ -112,7 +112,7 @@ def analyze_image(image_encoded: str) -> str:
                 {
                     "role": "user",
                     "content": [
-                        { "type": "input_text", "text": "Analyze this image and determine if there's an emergency or what path to follow." },
+                        { "type": "input_text", "text": "Analyze this image and describe what you see." },
                         {
                             "type": "input_image",
                             "image_url": f"data:image/jpeg;base64,{image_encoded}",
@@ -129,7 +129,7 @@ def analyze_image(image_encoded: str) -> str:
 
 @function_tool
 def call_emergency_services(
-    emergency_type: Literal["car_crash", "fire", "medical_emergency", "natural_disaster", "suspicious_activity"],
+    emergency_type: Literal["car_crash", "fire", "medical_emergency", "natural_disaster", "suspicious_activity", "other"],
     location: Location,
     severity: int
 ) -> str:
@@ -148,7 +148,7 @@ def call_emergency_services(
 
 @function_tool
 def observe_emergency(
-    emergency_type: Literal["car_crash", "fire", "medical_emergency", "natural_disaster", "suspicious_activity"]
+    emergency_type: Literal["car_crash", "fire", "medical_emergency", "natural_disaster", "suspicious_activity", "other"]
 ) -> str:
     """
     Observe and report on the emergency situation.
@@ -181,6 +181,9 @@ def observe_emergency(
             "People seeking shelter",
             "Emergency response teams mobilizing",
             "Infrastructure damage in multiple locations"
+        ],
+        "other": [
+            "big cow visible"
         ]
     }
     
@@ -295,7 +298,7 @@ class DroneAgent:
             # Analyze image
             with trace("drone_operation"):
                 img_desc = analyze_image(image_encoded)
-                print("Image description", img_desc)
+                print("Image description:\n", img_desc, end='\n --- end of image description ---\n\n')
                 
                 result = await Runner.run(
                     self.drone_operator_agent,
@@ -313,7 +316,7 @@ async def main():
         agent = DroneAgent()
         
         # Load image
-        image = Image.open("./image6.png")
+        image = Image.open("./image7.png")
         response = await agent.step(image)
         print(f"Response: {response}")
     except Exception as e:
