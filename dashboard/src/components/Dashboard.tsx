@@ -3,12 +3,11 @@ import { EmergencyReport, ReportStatus } from "../types";
 import KanbanColumn from "./KanbanColumn";
 import Layout from "./Layout";
 import "../styles/Dashboard.scss";
-// Import mock data directly
-import mockData from "../../../db/mock-data.json";
+import { mockReports } from "../mockData";
 
 const readJsonData = async (): Promise<EmergencyReport[]> => {
   // Return the mock data directly
-  return mockData.reports as EmergencyReport[];
+  return mockReports;
 };
 
 export const Dashboard = () => {
