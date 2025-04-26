@@ -1,9 +1,111 @@
 @import url("https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap");
 
+// Fullscreen overlay for the emergency image
+.fullscreen-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.9);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  backdrop-filter: blur(5px);
+  animation: overlay-fade-in 0.3s ease;
+
+  &__content {
+    position: relative;
+    max-width: 90%;
+    max-height: 90%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    animation: content-zoom-in 0.3s ease;
+  }
+
+  &__image {
+    max-width: 100%;
+    max-height: 90vh;
+    border-radius: 8px;
+    box-shadow: 0 4px 32px rgba(0, 0, 0, 0.5);
+    object-fit: contain;
+  }
+
+  &__info {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 1.5rem;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0) 100%);
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+    color: white;
+  }
+
+  &__title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0 0 0.5rem 0;
+  }
+
+  &__drone-id {
+    font-size: 0.85rem;
+    opacity: 0.8;
+    margin: 0;
+    font-family: "Space Mono", monospace;
+  }
+
+  &__close {
+    position: absolute;
+    top: -3rem;
+    right: 0;
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background-color: rgba(0, 0, 0, 0.5);
+    transition: background-color 0.2s;
+
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.2);
+    }
+  }
+}
+
+@keyframes overlay-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes content-zoom-in {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
 .emergency-details {
   width: 100%;
   height: 100%;
-  padding: 2rem 2.5rem;
+  padding: 2rem 2.5rem 4rem;
 
   &__header {
     display: flex;
@@ -46,6 +148,7 @@
     flex-direction: column;
     gap: 1.5rem;
     max-width: 500px;
+    height: 100%;
   }
 
   &__right {
@@ -54,13 +157,19 @@
 
   &__image-wrapper {
     position: relative;
-    height: 300px;
+    height: 45%;
     width: 100%;
     overflow: hidden;
     border-radius: 12px;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
     border: 1px solid rgba(255, 255, 255, 0.08);
     background-color: #2d3748;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+
+    &:hover {
+      transform: scale(1.01);
+    }
 
     &::after {
       content: "";
@@ -87,7 +196,7 @@
   &__drone-id {
     position: absolute;
     bottom: 1rem;
-    right: 1rem;
+    left: 1rem;
     z-index: 2;
     font-size: 0.8rem;
     font-weight: 600;
@@ -101,13 +210,81 @@
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
   }
 
+  &__fullscreen-btn {
+    position: absolute;
+    bottom: 1rem;
+    right: 1rem;
+    z-index: 2;
+    background: rgba(0, 0, 0, 0.5);
+    color: white;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+    transition: all 0.2s ease;
+
+    svg {
+      transition: transform 0.2s ease;
+    }
+
+    &:hover {
+      background-color: rgba(66, 153, 225, 0.8);
+      transform: scale(1.05);
+      
+      svg {
+        transform: scale(1.1);
+      }
+    }
+  }
+
   &__map-container {
     flex: 1;
     border-radius: 12px;
     overflow: hidden;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
     border: 1px solid rgba(255, 255, 255, 0.08);
-    min-height: 300px;
+    min-height: 0;
+    max-height: none;
+  }
+
+  &__map {
+    .leaflet-tile-pane {
+      filter: brightness(0.5) saturate(0.4) hue-rotate(210deg) contrast(1.2);
+    }
+    
+    .leaflet-control-zoom {
+      border: none;
+      
+      a {
+        background-color: rgba(26, 32, 44, 0.8);
+        color: #a0aec0;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        
+        &:hover {
+          background-color: rgba(45, 55, 72, 0.9);
+          color: #f7fafc;
+        }
+      }
+    }
+    
+    .leaflet-popup-content-wrapper, 
+    .leaflet-tooltip {
+      background-color: rgba(26, 32, 44, 0.9);
+      color: #f7fafc;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .leaflet-popup-tip {
+      background-color: rgba(26, 32, 44, 0.9);
+    }
   }
 
   &__info-card {
@@ -247,6 +424,17 @@
     text-align: left;
   }
 
+  &__location-text {
+    font-weight: 500;
+  }
+
+  &__coordinates-text {
+    color: #8a98a8;
+    font-weight: 400;
+    font-size: 0.9em;
+    opacity: 0.8;
+  }
+
   &__loading {
     height: 100%;
     display: flex;
@@ -278,9 +466,10 @@
   border-radius: 8px;
 }
 
-// Add pulsing effect to the map marker
-.pulsing-dot {
-  animation: map-pulse 2s infinite;
+// Custom marker shadow for better visibility
+.custom-marker-icon {
+  box-shadow: 0 0 12px rgba(66, 153, 225, 0.8);
+  z-index: 1000 !important;
 }
 
 @keyframes spinner {
@@ -289,22 +478,6 @@
   }
   100% {
     transform: rotate(360deg);
-  }
-}
-
-// Pulsing animation for the map marker
-@keyframes map-pulse {
-  0% {
-    opacity: 0.8;
-    stroke-width: 2;
-  }
-  50% {
-    opacity: 0.4;
-    stroke-width: 4;
-  }
-  100% {
-    opacity: 0.8;
-    stroke-width: 2;
   }
 }
 
@@ -334,5 +507,128 @@
       align-items: flex-start;
       gap: 1rem;
     }
+  }
+}
+
+// Custom HTML marker styling
+.custom-marker-container {
+  background: transparent !important;
+  border: none !important;
+  
+  .leaflet-marker-icon {
+    background: transparent;
+    border: none;
+  }
+}
+
+.animated-marker {
+  position: relative;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  .marker-core {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    background-color: #FF3A5E;
+    border: 2px solid white;
+    border-radius: 50%;
+    box-shadow: 0 0 8px rgba(255, 58, 94, 0.7);
+    z-index: 10;
+    animation: pulse-core 1.5s infinite;
+  }
+  
+  .marker-ripple {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    right: 15px;
+    bottom: 15px;
+    border: 2px solid #FF3A5E;
+    border-radius: 50%;
+    animation: ripple 2s infinite ease-out;
+    z-index: 5;
+    opacity: 0;
+  }
+  
+  &::after {
+    content: '';
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    border: 2px solid #FF3A5E;
+    border-radius: 50%;
+    animation: ripple 2s infinite ease-out 0.5s;
+    z-index: 1;
+    opacity: 0;
+  }
+}
+
+@keyframes pulse-core {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(255, 58, 94, 0.7);
+  }
+  70% {
+    transform: scale(1.2);
+    box-shadow: 0 0 0 6px rgba(255, 58, 94, 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(255, 58, 94, 0);
+  }
+}
+
+@keyframes ripple {
+  0% {
+    transform: scale(0.1);
+    opacity: 1;
+  }
+  70% {
+    transform: scale(1);
+    opacity: 0.3;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+// Location loader styling
+.location-loader {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: #a0aec0;
+  
+  &__spinner {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid rgba(99, 179, 237, 0.2);
+    border-top-color: #63b3ed;
+    animation: spinner 0.8s linear infinite;
+  }
+  
+  span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-style: italic;
+  }
+}
+
+@keyframes spinner {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
   }
 } 
