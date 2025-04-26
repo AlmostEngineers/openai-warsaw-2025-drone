@@ -258,6 +258,7 @@ const EmergencyDetails = () => {
   } | null>(null);
   const [isLoadingLocation, setIsLoadingLocation] = useState<boolean>(false);
   const [showFullscreenImage, setShowFullscreenImage] = useState(false);
+  const [isClosingFullscreen, setIsClosingFullscreen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -297,6 +298,14 @@ const EmergencyDetails = () => {
     } finally {
       setIsLoadingLocation(false);
     }
+  };
+
+  const handleCloseFullscreen = () => {
+    setIsClosingFullscreen(true);
+    setTimeout(() => {
+      setShowFullscreenImage(false);
+      setIsClosingFullscreen(false);
+    }, 300); // Match this with CSS animation duration
   };
 
   if (error) {
@@ -374,10 +383,20 @@ const EmergencyDetails = () => {
     <Layout>
       {showFullscreenImage && emergency.imageUrl && (
         <div
-          className="emergency-details__fullscreen-overlay"
-          onClick={() => setShowFullscreenImage(false)}
+          className={`emergency-details__fullscreen-overlay ${
+            isClosingFullscreen
+              ? "emergency-details__fullscreen-overlay--closing"
+              : ""
+          }`}
+          onClick={handleCloseFullscreen}
         >
-          <div className="emergency-details__fullscreen-image-container">
+          <div
+            className={`emergency-details__fullscreen-image-container ${
+              isClosingFullscreen
+                ? "emergency-details__fullscreen-image-container--closing"
+                : ""
+            }`}
+          >
             <img
               src={emergency.imageUrl}
               alt={emergency.type}
@@ -385,7 +404,10 @@ const EmergencyDetails = () => {
             />
             <button
               className="emergency-details__fullscreen-close"
-              onClick={() => setShowFullscreenImage(false)}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleCloseFullscreen();
+              }}
               aria-label="Close fullscreen image"
             >
               ×
