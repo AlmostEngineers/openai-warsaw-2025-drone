@@ -1,3 +1,5 @@
+![hero](https://github.com/user-attachments/assets/8257497f-fe26-4a44-872e-afdc245f4491)
+
 # OpenAI Warsaw 2025 Drone Emergency Detection System
 
 A drone-based system that uses OpenAI's agent technology to detect accidents and emergency situations in real-time.
