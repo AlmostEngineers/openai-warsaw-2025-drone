@@ -1,5 +1,8 @@
 import os
+import io
+
 from agents import Agent, Runner, function_tool, trace, Handoff, FileSearchTool
+from playsound import playsound
 from typing import Dict, Any, Tuple, TypedDict, Literal
 from PIL import Image
 import asyncio
@@ -12,10 +15,6 @@ import sys
 # Load environment variables from .env file
 load_dotenv()
 
-# Verify API key is set
-if not os.getenv("OPENAI_API_KEY"):
-    raise ValueError("OPENAI_API_KEY environment variable is not set. Please set it in your .env file.")
-
 class Location(TypedDict):
     x: float
     y: float
@@ -23,14 +22,34 @@ class Location(TypedDict):
 
 import base64
 from openai import OpenAI
+import openai
 
 
 client = OpenAI()
 
-# Function to encode the image
-def encode_image(image_path):
-    with open(image_path, "rb") as image_file:
-        return base64.b64encode(image_file.read()).decode("utf-8")
+
+@function_tool
+def audio_message(message: str) -> None:
+    print("audio message: " + message)
+    response = openai.Audio.speech.create(
+    model="tts-1",          # example model name
+    voice="alloy",          # pick a voice identifier
+    input=message
+    )
+
+    # 3. The API returns a base64-encoded audio blob
+    b64_audio = response["audio"]["data"]
+
+    # 4. Decode to raw bytes
+    audio_bytes = base64.b64decode(b64_audio)
+
+    # 2) dump to file
+    filename = "speech.mp3"
+    with open(filename, "wb") as f:
+        f.write(audio_bytes)
+
+    # 3) play it
+    playsound(filename)
 
 
 def encode_image_to_base64(image: Image.Image) -> str:
@@ -60,24 +79,23 @@ def analyze_image(image_encoded: str) -> str:
     """
     try:
         response = client.responses.create(
-            model="gpt-4.1",
+            model="gpt-4.1-nano",
             input=[
                 {
                     "role": "system",
                     "content": """
-                    You are a great drone operator analyzing images and describing its content.
+                    You are a great drone operator describing images content.
                     Your task is to:
-                    1. Analyze the image content
-                    2. Identify objects and situations
-                    3. Describe what you see and give coordinates (x, y) for every object/situation. x and y must be normalized by image width and height so it is between 0 and 1
+                    1. Identify objects and situations
+                    2. Describe what you see and give coordinates (x, y) for every object/situation. x and y must be normalized by image width and height so it is between 0 and 1
+                    Be consise and describe only list interesting objects - ignore uninteresting elements like empty roads and trees.
 
-                    Give special care to:
+                    Some examples of interesting objects are:
                     - Car crashes
                     - Unconscious or injured people
                     - Fires
-                    - Natural disasters
                     - Suspicious activities
-                    - Other dangerous situations
+                    - Other dangerous or illegal observations
                     """
 
                     # Provide your response in JSON format:
@@ -284,19 +302,17 @@ class DroneAgent:
                 - "NON_EMERGENCY_HANDLING" if the observation is not an emergency
             
                 
-            1. example non-emergency observations:
+            1. examples non-emergency observations:
                - Damaged infrastructure (roofs, roads, buildings)
                - Smoke from non-emergency sources
                - Environmental issues
-               - Other maintenance concerns
             
-            2. example emergency observations:
+            2. examples emergency observations:
                 - Car crashes
                 - Unconscious or injured people
                 - Fires
                 - Natural disasters
                 - Suspicious activities
-                - Other dangerous situations
             """,
             tools=[move_to_image_coordinates, change_state],
             # handoffs=[self.emergency_agent, self.maintenance_agent],
@@ -315,13 +331,13 @@ class DroneAgent:
             5. Avoid interfering with emergency response efforts
             
             Emergency Response Protocol:
-            1. If you see situation that can be resolved by attracting attention like unconscious human call siren
+            1. You can use voice_message function with a specified message to attract attention or give humans instructions and call_siren to play loud signal to attract attention
             2. If the situation is not resolved, call emergency services with location and details
             3. Then, observe and report on the situation
             4. Maintain safe distance from the scene
             5. Continue until emergency services arrive or situation is resolved
             """,
-            tools=[call_siren, call_emergency_services, observe_and_report_emergency, move_to_image_coordinates],
+            tools=[call_siren, audio_message, call_emergency_services, observe_and_report_emergency, move_to_image_coordinates],
             handoff_description='This agent should be called when an emergency is detected. It handles emergency situations.'
         )
 
@@ -338,6 +354,7 @@ class DroneAgent:
             2. Investigation Protocol:
                - First, report the observation with details
                - Then, investigate the situation
+               - you can use audio_message function to give instrunctions to nearby humans if necessary
                - Document findings
                - Recommend follow-up actions
                - if investigation discovered that the problem is an emergency situation then delegate control to the emergency agent
@@ -349,7 +366,7 @@ class DroneAgent:
                - Infrastructure maintenance needs
                - Other non-emergency concerns
             """,
-            tools=[report_observation, investigate_observation, move_to_image_coordinates],
+            tools=[report_observation, investigate_observation, move_to_image_coordinates, audio_message],
             handoffs=[self.emergency_agent],
             handoff_description='This agent handles non-emergency observations and maintenance issues.'
         )
@@ -362,10 +379,6 @@ class DroneAgent:
             Your responsibilities are:
             1. Analyze images from the drone's camera
             2. If you see something unusual change state to INVESTIGATION by calling `change_state` function and hand off control to investigation agent
-            3. The investigation agent will then:
-               - Parse the image description
-               - Move to investigate objects
-               - Determine appropriate response
             """,
             tools=[follow_path, change_state],
             handoffs=[self.investigation_agent],
