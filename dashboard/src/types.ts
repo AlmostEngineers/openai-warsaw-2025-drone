@@ -9,7 +9,6 @@ export interface EmergencyReport {
   id: string;
   title: string;
   summary: string;
-  location: string;
   coordinates: {
     lat: number;
     lng: number;

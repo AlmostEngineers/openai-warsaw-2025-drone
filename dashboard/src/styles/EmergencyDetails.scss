@@ -493,6 +493,8 @@
     font-weight: 400;
     font-size: 0.9em;
     opacity: 0.8;
+    margin-top: 4px;
+    display: block;
   }
 
   &__loading {
@@ -512,6 +514,47 @@
     border: 3px solid rgba(99, 179, 237, 0.2);
     border-top-color: #63b3ed;
     animation: spinner 1s infinite linear;
+  }
+
+  &__error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 3rem;
+    color: #a0aec0;
+    
+    svg {
+      color: #FC8181;
+      margin-bottom: 1.5rem;
+    }
+    
+    h3 {
+      font-size: 1.25rem;
+      color: #F7FAFC;
+      margin: 0 0 0.5rem 0;
+    }
+    
+    p {
+      margin: 0.5rem 0 2rem 0;
+    }
+  }
+  
+  &__error-button {
+    background: rgba(66, 153, 225, 0.2);
+    color: #63B3ED;
+    border: 1px solid rgba(99, 179, 237, 0.3);
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    
+    &:hover {
+      background: rgba(66, 153, 225, 0.3);
+      transform: translateY(-2px);
+    }
   }
 }
 
@@ -668,27 +711,45 @@
   color: #a0aec0;
   
   &__spinner {
-    width: 14px;
-    height: 14px;
+    width: 16px;
+    height: 16px;
     border-radius: 50%;
     border: 2px solid rgba(99, 179, 237, 0.2);
     border-top-color: #63b3ed;
-    animation: spinner 0.8s linear infinite;
-  }
-  
-  span {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    font-style: italic;
+    animation: spinner 1s infinite linear;
   }
 }
 
-@keyframes spinner {
-  0% {
-    transform: rotate(0deg);
+// Popup loader styling
+.popup-loader {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: #a0aec0;
+  margin-top: 5px;
+  
+  &__spinner {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid rgba(99, 179, 237, 0.2);
+    border-top-color: #63b3ed;
+    animation: spinner 1s infinite linear;
   }
-  100% {
-    transform: rotate(360deg);
-  }
+}
+
+// Popup styling for location and coordinates
+.popup-location {
+  font-weight: 500;
+  margin-top: 5px;
+}
+
+.popup-coordinates {
+  font-size: 0.85em;
+  color: #8a98a8;
+  font-weight: 400;
+  margin-top: 4px;
+  opacity: 0.8;
+  display: block;
 } 

@@ -61,7 +61,7 @@ export const Layout = ({ children }: LayoutProps) => {
         <div className="dashboard__info">
           <div className="dashboard__info-box">
             <span className="dashboard__info-box-label">Active Drones</span>
-            <span className="dashboard__info-box-value">42</span>
+            <span className="dashboard__info-box-value">1</span>
           </div>
           <div className="dashboard__info-box">
             <span className="dashboard__info-box-label">Current Time</span>

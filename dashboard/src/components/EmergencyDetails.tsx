@@ -29,27 +29,70 @@ const AnimatedMarker = ({
   const [locationName, setLocationName] = useState<string>(
     "Loading location..."
   );
+  const [coordinatesText, setCoordinatesText] = useState<string>("");
+  const [isLoadingLocation, setIsLoadingLocation] = useState<boolean>(true);
 
   useEffect(() => {
-    // Fetch location name from coordinates using OpenStreetMap Nominatim API
+    // Use BigDataCloud API for reverse geocoding - client-side
     const fetchLocationName = async () => {
+      setIsLoadingLocation(true);
       try {
+        // position is now correctly in [latitude, longitude] format
         const response = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${position[0]}&lon=${position[1]}&zoom=18&addressdetails=1`,
-          {
-            headers: {
-              "Accept-Language": "en",
-              "User-Agent": "EmergencyDashboardApp/1.0",
-            },
-          }
+          `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${position[0]}&longitude=${position[1]}&localityLanguage=en`
         );
+
         const data = await response.json();
-        if (data && data.display_name) {
-          setLocationName(data.display_name);
+        // Format coordinates nicely
+        const coords = `${position[0].toFixed(6)}° N, ${position[1].toFixed(
+          6
+        )}° E`;
+        setCoordinatesText(coords);
+
+        if (data) {
+          // Build a location string prioritizing specific details
+          let address = "";
+
+          // Add street-level details if available
+          if (data.road) {
+            if (data.streetNumber) {
+              address = `${data.road} ${data.streetNumber}`;
+            } else {
+              address = data.road;
+            }
+
+            // Add district if available and not the same as the city
+            if (
+              data.locality &&
+              data.locality !== data.city &&
+              !data.road.includes(data.locality)
+            ) {
+              address += `, ${data.locality}`;
+            }
+
+            // Add city if available
+            if (data.city) {
+              address += `, ${data.city}`;
+            }
+          }
+          // If no road info available, fall back to less detailed info
+          else if (data.locality || data.city) {
+            address = data.locality || data.city;
+          }
+
+          setLocationName(address || coords);
+        } else {
+          setLocationName(coords);
         }
       } catch (error) {
         console.error("Error fetching location name:", error);
-        setLocationName(`${position[0]}, ${position[1]}`);
+        const coords = `${position[0].toFixed(6)}° N, ${position[1].toFixed(
+          6
+        )}° E`;
+        setLocationName(coords);
+        setCoordinatesText("");
+      } finally {
+        setIsLoadingLocation(false);
       }
     };
 
@@ -88,7 +131,19 @@ const AnimatedMarker = ({
         <Popup>
           <b>{emergency.type}</b>
           <br />
-          {locationName}
+          {isLoadingLocation ? (
+            <div className="popup-loader">
+              <div className="popup-loader__spinner"></div>
+              <span>Fetching location...</span>
+            </div>
+          ) : (
+            <>
+              <div className="popup-location">{locationName}</div>
+              {coordinatesText && (
+                <div className="popup-coordinates">{coordinatesText}</div>
+              )}
+            </>
+          )}
         </Popup>
       </Marker>
     </>
@@ -203,6 +258,7 @@ const EmergencyDetails = () => {
   } | null>(null);
   const [isLoadingLocation, setIsLoadingLocation] = useState<boolean>(false);
   const [showFullscreenImage, setShowFullscreenImage] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchEmergency = async () => {
@@ -217,6 +273,9 @@ const EmergencyDetails = () => {
         }
       } catch (error) {
         console.error("Error fetching emergency:", error);
+        setError(
+          `Emergency with ID ${id} not found. It may have been removed.`
+        );
       }
     };
 
@@ -232,13 +291,65 @@ const EmergencyDetails = () => {
       console.error("Error fetching location name:", error);
       const [longitude, latitude] = coordinates;
       setLocationData({
-        locationText: "Location at",
-        coordinatesText: `(${latitude.toFixed(6)}, ${longitude.toFixed(6)})`,
+        locationText: `${latitude.toFixed(6)}° N, ${longitude.toFixed(6)}° E`,
+        coordinatesText: "",
       });
     } finally {
       setIsLoadingLocation(false);
     }
   };
+
+  if (error) {
+    return (
+      <Layout>
+        <div className="emergency-details">
+          <div className="emergency-details__header">
+            <Link to="/" className="emergency-details__back-button">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M19 12H5M5 12L12 19M5 12L12 5"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              Back to Dashboard
+            </Link>
+            <h2 className="emergency-details__title">Emergency Details</h2>
+          </div>
+          <div className="emergency-details__error">
+            <svg
+              width="64"
+              height="64"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            <h3>{error}</h3>
+            <p>Please return to the dashboard to view available emergencies.</p>
+            <Link to="/" className="emergency-details__error-button">
+              Return to Dashboard
+            </Link>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   if (!emergency) {
     return (
@@ -254,7 +365,8 @@ const EmergencyDetails = () => {
   const formattedDate = new Date(emergency.timestamp).toLocaleDateString();
   const formattedTime = new Date(emergency.timestamp).toLocaleTimeString();
 
-  // Extract coordinates in [lat, lng] format for the map
+  // Extract coordinates in correct [longitude, latitude] order for the map
+  // Leaflet expects [latitude, longitude] order
   const [longitude, latitude] = emergency.location.coordinates;
   const mapPosition: [number, number] = [latitude, longitude];
 
@@ -417,12 +529,14 @@ const EmergencyDetails = () => {
                     ) : (
                       locationData && (
                         <>
-                          <span className="emergency-details__location-text">
+                          <div className="emergency-details__location-text">
                             {locationData.locationText}
-                          </span>{" "}
-                          <span className="emergency-details__coordinates-text">
-                            {locationData.coordinatesText}
-                          </span>
+                          </div>
+                          {locationData.coordinatesText && (
+                            <div className="emergency-details__coordinates-text">
+                              {locationData.coordinatesText}
+                            </div>
+                          )}
                         </>
                       )
                     )}

@@ -135,7 +135,9 @@ export const ReportCard = ({ report }: ReportCardProps) => {
           <div className="report__footer">
             <div className="report__metadata-group">
               <span className="report__metadata report__metadata--location">
-                {report.location}
+                {`${report.coordinates.lat.toFixed(
+                  4
+                )}° N, ${report.coordinates.lng.toFixed(4)}° E`}
               </span>
               <span className="report__metadata">
                 {new Date(report.timestamp).toLocaleDateString()}{" "}

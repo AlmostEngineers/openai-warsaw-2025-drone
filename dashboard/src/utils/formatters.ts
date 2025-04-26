@@ -68,3 +68,65 @@ export const formatFileSize = (bytes: number): string => {
     return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
   }
 };
+
+/**
+ * Interface representing BigDataCloud API response structure
+ */
+export interface GeocodingResponse {
+  road?: string;
+  streetNumber?: string;
+  locality?: string;
+  city?: string;
+  principalSubdivision?: string;
+  countryName?: string;
+  [key: string]: any; // Allow additional properties
+}
+
+/**
+ * Format address from BigDataCloud API response
+ * Prioritizing street name and number, and avoiding redundancy
+ */
+export const formatAddressFromApiData = (data: any): string => {
+  if (!data) return "";
+
+  const parts: string[] = [];
+
+  // ALWAYS prioritize street-level details if available
+  if (data.road) {
+    // Add street with number if available
+    if (data.streetNumber) {
+      parts.push(`${data.road} ${data.streetNumber}`);
+    } else {
+      parts.push(data.road);
+    }
+  }
+
+  // Add locality if not redundant with road
+  if (
+    data.locality &&
+    (!data.road || !data.road.includes(data.locality)) &&
+    (!data.city || data.locality !== data.city)
+  ) {
+    parts.push(data.locality);
+  }
+
+  // Add city
+  if (data.city) {
+    parts.push(data.city);
+  }
+
+  // Add region if not redundant with city
+  if (
+    data.principalSubdivision &&
+    (!data.city || data.principalSubdivision !== data.city)
+  ) {
+    parts.push(data.principalSubdivision);
+  }
+
+  // Add country
+  if (data.countryName) {
+    parts.push(data.countryName);
+  }
+
+  return parts.join(", ");
+};

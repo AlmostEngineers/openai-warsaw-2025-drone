@@ -1,4 +1,5 @@
 import { mockEmergencies } from "../mockData";
+import { formatAddressFromApiData } from "../utils/formatters";
 
 // Define the interface matching the mockEmergencies data structure
 export interface Emergency {
@@ -36,7 +37,11 @@ export const getEmergencyById = async (id: string): Promise<Emergency> => {
       if (emergency) {
         resolve(emergency);
       } else {
-        reject(new Error(`Emergency with ID ${id} not found`));
+        reject(
+          new Error(
+            `Emergency with ID ${id} not found. Only IDs 1 and 2 are available in this demo.`
+          )
+        );
       }
     }, 500);
   });
@@ -78,79 +83,41 @@ export const getLocationFromCoordinates = async (
   coordinates: number[]
 ): Promise<{ locationText: string; coordinatesText: string }> => {
   const [longitude, latitude] = coordinates;
-  const coordsText = `(${latitude.toFixed(6)}, ${longitude.toFixed(6)})`;
 
   try {
-    // Try to use OpenStreetMap Nominatim API first
+    // Use BigDataCloud API for reverse geocoding - doesn't require API key and works client-side
     const response = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`,
-      {
-        headers: {
-          "Accept-Language": "en",
-          "User-Agent": "EmergencyDashboardApp/1.0",
-        },
-      }
+      `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
     );
 
     const data = await response.json();
 
-    if (data && data.address) {
-      const addr = data.address;
-      const parts = [];
+    // Format the address using our utility function
+    const address = formatAddressFromApiData(data);
 
-      // Start with road/street and house number
-      if (addr.road || addr.street || addr.pedestrian) {
-        const street = addr.road || addr.street || addr.pedestrian;
-        const houseNum = addr.house_number ? `${addr.house_number}` : "";
+    // Format coordinates nicely
+    const coordsText = `${latitude.toFixed(6)}° N, ${longitude.toFixed(6)}° E`;
 
-        if (houseNum) {
-          parts.push(`${houseNum} ${street}`);
-        } else {
-          parts.push(street);
-        }
-      }
-
-      // Then add neighborhood or suburb
-      if (addr.neighbourhood || addr.suburb) {
-        parts.push(addr.neighbourhood || addr.suburb);
-      }
-
-      // Then add city/town/village/etc
-      if (addr.city || addr.town || addr.village || addr.municipality) {
-        parts.push(addr.city || addr.town || addr.village || addr.municipality);
-      }
-
-      // Finally add country
-      if (addr.country) {
-        parts.push(addr.country);
-      }
-
-      if (parts.length > 0) {
-        return {
-          locationText: parts.join(", "),
-          coordinatesText: coordsText,
-        };
-      }
-    }
-
-    // If OSM fails or returns incomplete data, use just the display_name
-    if (data && data.display_name) {
+    if (address) {
       return {
-        locationText: data.display_name,
+        locationText: address,
         coordinatesText: coordsText,
       };
     }
 
-    // If all else fails, return coordinates
+    // If no address found, return coordinates as both
     return {
-      locationText: "Location at",
-      coordinatesText: coordsText,
+      locationText: coordsText,
+      coordinatesText: "",
     };
   } catch (error) {
     console.error("Error fetching location name:", error);
+
+    // Fallback if API fails
+    const coordsText = `${latitude.toFixed(6)}° N, ${longitude.toFixed(6)}° E`;
     return {
-      locationText: "Location at",
-      coordinatesText: coordsText,
+      locationText: coordsText,
+      coordinatesText: "",
     };
   }
 };

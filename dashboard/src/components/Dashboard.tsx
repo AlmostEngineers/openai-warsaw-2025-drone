@@ -16,7 +16,6 @@ export const Dashboard = () => {
 
   // Function to fetch reports from mock-data.json
   const fetchReports = async () => {
-    console.log("fetchReports");
     try {
       const data = await readJsonData();
       setReports(data);
