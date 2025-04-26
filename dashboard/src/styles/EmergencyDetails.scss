@@ -1,0 +1,338 @@
+@import url("https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap");
+
+.emergency-details {
+  width: 100%;
+  height: 100%;
+  padding: 2rem 2.5rem;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  &__back-button {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    color: #a0aec0;
+    text-decoration: none;
+    transition: color 0.2s ease;
+    padding: 0.5rem 0;
+
+    &:hover {
+      color: #63b3ed;
+    }
+  }
+
+  &__title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #f7fafc;
+    margin: 0;
+  }
+
+  &__content {
+    display: flex;
+    gap: 2rem;
+    height: calc(100% - 70px);
+  }
+
+  &__left {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    max-width: 500px;
+  }
+
+  &__right {
+    flex: 1;
+  }
+
+  &__image-wrapper {
+    position: relative;
+    height: 300px;
+    width: 100%;
+    overflow: hidden;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background-color: #2d3748;
+
+    &::after {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 100px;
+      background: linear-gradient(
+        to top,
+        rgba(0, 0, 0, 0.7) 0%,
+        rgba(0, 0, 0, 0) 100%
+      );
+      z-index: 1;
+    }
+  }
+
+  &__image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  &__drone-id {
+    position: absolute;
+    bottom: 1rem;
+    right: 1rem;
+    z-index: 2;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: white;
+    background-color: rgba(0, 0, 0, 0.6);
+    padding: 0.35rem 0.7rem;
+    border-radius: 6px;
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  }
+
+  &__map-container {
+    flex: 1;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    min-height: 300px;
+  }
+
+  &__info-card {
+    background: rgba(26, 32, 44, 0.7);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 2rem;
+    height: 100%;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  &__info-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 2rem;
+  }
+
+  &__info-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #f7fafc;
+    margin: 0;
+    max-width: 70%;
+    text-align: left;
+  }
+
+  &__severity {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.35rem 0.8rem;
+    border-radius: 6px;
+    width: fit-content;
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    position: relative;
+    overflow: hidden;
+    
+    &::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: -1;
+      opacity: 0.15;
+      border-radius: inherit;
+    }
+    
+    &.report__severity--critical {
+      color: #fc8181;
+      
+      &::before {
+        background: linear-gradient(90deg, #fc8181 0%, #e53e3e 100%);
+      }
+    }
+    
+    &.report__severity--high {
+      color: #f6ad55;
+      
+      &::before {
+        background: linear-gradient(90deg, #f6ad55 0%, #dd6b20 100%);
+      }
+    }
+    
+    &.report__severity--medium {
+      color: #fbd38d;
+      
+      &::before {
+        background: linear-gradient(90deg, #fbd38d 0%, #d69e2e 100%);
+      }
+    }
+    
+    &.report__severity--low {
+      color: #68d391;
+      
+      &::before {
+        background: linear-gradient(90deg, #68d391 0%, #38a169 100%);
+      }
+    }
+  }
+
+  &__info-section {
+    margin-bottom: 2rem;
+  }
+
+  &__info-section-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #a0aec0;
+    margin: 0 0 0.5rem 0;
+    text-align: left;
+  }
+
+  &__info-section-content {
+    font-size: 1rem;
+    line-height: 1.5;
+    color: #f7fafc;
+    margin: 0;
+    text-align: left;
+  }
+
+  &__info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+
+  &__info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+
+  &__info-item-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #a0aec0;
+    margin: 0;
+    text-align: left;
+  }
+
+  &__info-item-value {
+    font-size: 1rem;
+    font-weight: 500;
+    color: #f7fafc;
+    font-family: "Space Mono", monospace;
+    text-align: left;
+  }
+
+  &__loading {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    color: #a0aec0;
+  }
+
+  &__loading-spinner {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 3px solid rgba(99, 179, 237, 0.2);
+    border-top-color: #63b3ed;
+    animation: spinner 1s infinite linear;
+  }
+}
+
+// Fix Leaflet default icon in popup
+.leaflet-popup-content {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  margin: 0.5rem 0.75rem;
+  line-height: 1.4;
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius: 8px;
+}
+
+// Add pulsing effect to the map marker
+.pulsing-dot {
+  animation: map-pulse 2s infinite;
+}
+
+@keyframes spinner {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+// Pulsing animation for the map marker
+@keyframes map-pulse {
+  0% {
+    opacity: 0.8;
+    stroke-width: 2;
+  }
+  50% {
+    opacity: 0.4;
+    stroke-width: 4;
+  }
+  100% {
+    opacity: 0.8;
+    stroke-width: 2;
+  }
+}
+
+/* Media queries */
+@media (max-width: 992px) {
+  .emergency-details {
+    padding: 1.5rem;
+    
+    &__content {
+      flex-direction: column;
+    }
+    
+    &__left {
+      max-width: 100%;
+    }
+    
+    &__info-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .emergency-details {
+    &__header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+  }
+} 
