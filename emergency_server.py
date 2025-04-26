@@ -21,10 +21,12 @@ class Emergency(BaseModel):
         "other",
     ]
     location: Location
+    status: str
     severity: int
     timestamp: datetime.datetime
     description: str = ""
     image: str = ""  # Base64 encoded image
+    changelog: list[tuple[datetime.datetime, str]]
 
 
 # In-memory storage for emergencies
@@ -49,6 +51,7 @@ async def get_emergencies():
 
 
 def add_emergency(
+    intervention_id: int,
     emergency_type: str,
     location: Dict[str, float],
     severity: int,
@@ -57,16 +60,26 @@ def add_emergency(
 ) -> Emergency:
     """Add a new emergency to the list"""
     emergency = Emergency(
-        id=len(emergencies) + 1,
+        id=intervention_id,
         emergency_type=emergency_type,
         location=Location(**location),
+        status="IN_PROGRESS",
         severity=severity,
         timestamp=datetime.datetime.now(),
         description=description,
         image=image,
+        changelog=[],
     )
     emergencies.append(emergency)
     return emergency
+
+def resolve_emergency(intervention_id: int):
+    for em in emergencies:
+        if em.intervention_id != intervention_id:
+            continue
+
+        em.status = 'RESOLVED'
+        em.changelog.append((datetime.datetime.now(), 'RESOLVED'))
 
 
 # Run the server

@@ -23,7 +23,7 @@ from pydantic import BaseModel
 import re
 import threading
 import time
-from emergency_server import add_emergency, app
+from emergency_server import add_emergency, app, resolve_emergency
 
 import base64
 from openai import OpenAI
@@ -278,7 +278,7 @@ class DroneAgent:
         call_siren_callback,
     ):
         self.state = "PATROL"
-        self.context = {}  # Initialize empty context
+        self.context = {"id": 0}  # Initialize empty context
 
         @function_tool
         def change_state(
@@ -291,7 +291,11 @@ class DroneAgent:
             ],
         ):
             self.state = new_state
-            self.context = wrapper.context
+            if new_state == 'PATROL':
+                resolve_emergency(self.context["id"])
+
+                self.context["id"] += 1
+
             return "Switched to " + new_state
 
         @function_tool
@@ -338,11 +342,14 @@ class DroneAgent:
 
             # Get the current image from context
             current_image = ""
+            int_id = -1
             if hasattr(self, "context") and isinstance(self.context, dict):
                 current_image = self.context.get("image", "")
+                int_id = self.context.get('id', -1)
 
             # Add emergency to the server
             add_emergency(
+                intervention_id=int_id,
                 emergency_type=emergency_type,
                 location=location,
                 severity=severity,
@@ -420,7 +427,7 @@ class DroneAgent:
                 "other",
             ],
             location: Location,
-        ) -> str:
+        ) -> None:
             """Investigate a reported observation
 
             Args:
@@ -432,9 +439,7 @@ class DroneAgent:
             """
             investigate_observation_callback(observation_type, location)
             print(f"Investigating {observation_type} at location {location}")
-            return (
-                f"Investigation complete for {observation_type} at location {location}"
-            )
+
 
         @function_tool
         def observe_and_report_emergency(
@@ -500,7 +505,6 @@ class DroneAgent:
                 - "EMERGENCY_HANDLING"  if the observation is emergency
                 - "NON_EMERGENCY_HANDLING" if the observation is not an emergency
             
-                
             1. examples non-emergency observations:
                - Damaged infrastructure (roofs, roads, buildings)
                - Smoke from non-emergency sources
@@ -514,7 +518,6 @@ class DroneAgent:
                 - Suspicious activities
             """,
             tools=[move_to_image_coordinates, change_state],
-            # handoffs=[self.emergency_agent, self.maintenance_agent],
             handoff_description="This agent investigates objects detected in images.",
             input_guardrails=[InputGuardrail(guardrail_function=check_image_security)],
         )
