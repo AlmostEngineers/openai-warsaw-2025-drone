@@ -3,12 +3,13 @@ import { EmergencyReport, ReportStatus } from "../types";
 import KanbanColumn from "./KanbanColumn";
 import Layout from "./Layout";
 import "../styles/Dashboard.scss";
-import * as db from "../../../db/mock-data.json";
+// Import mock data directly
+import mockData from "../../../db/mock-data.json";
 
 const readJsonData = async (): Promise<EmergencyReport[]> => {
-  return db.reports as EmergencyReport[];
+  // Return the mock data directly
+  return mockData.reports as EmergencyReport[];
 };
-
 
 export const Dashboard = () => {
   const [reports, setReports] = useState<EmergencyReport[]>([]);
@@ -16,8 +17,13 @@ export const Dashboard = () => {
 
   // Function to fetch reports from mock-data.json
   const fetchReports = async () => {
-    const data = await readJsonData();
-    setReports(data);
+    console.log("fetchReports");
+    try {
+      const data = await readJsonData();
+      setReports(data);
+    } catch (error) {
+      console.error("Error fetching reports:", error);
+    }
   };
 
   useEffect(() => {
