@@ -1,8 +1,6 @@
-import json
 import os
-import io
 
-from agents import Agent, Runner, function_tool, trace, Handoff, FileSearchTool
+from agents import Agent, Runner, function_tool, trace
 
 from playsound import playsound
 from agents import (
@@ -13,7 +11,7 @@ from agents import (
     function_tool,
     trace,
 )
-from typing import Dict, Any, Tuple, TypedDict, Literal
+from typing import Tuple, TypedDict, Literal
 from PIL import Image
 import asyncio
 import random
@@ -22,8 +20,14 @@ from io import BytesIO
 from dotenv import load_dotenv
 import sys
 from pydantic import BaseModel
-import pytesseract  # Add OCR capability
 import re
+import threading
+import time
+from emergency_server import add_emergency, app
+
+import base64
+from openai import OpenAI
+import openai
 
 # Load environment variables from .env file
 load_dotenv()
@@ -38,11 +42,6 @@ if not os.getenv("OPENAI_API_KEY"):
 class Location(TypedDict):
     x: float
     y: float
-
-
-import base64
-from openai import OpenAI
-import openai
 
 
 client = OpenAI()
@@ -330,6 +329,15 @@ class DroneAgent:
                 f"Calling emergency services for {emergency_type} at coordinates {location}"
             )
             print(f"Severity level: {severity}")
+
+            # Add emergency to the server
+            add_emergency(
+                emergency_type=emergency_type,
+                location=location,
+                severity=severity,
+                description=f"Emergency detected at coordinates {location} with severity {severity}",
+            )
+
             return f"Emergency services have been notified about {emergency_type} at location {location}"
 
         @function_tool
@@ -680,6 +688,25 @@ async def main():
             call_siren_callback=noop_call_siren,
         )
 
+        # Start the FastAPI server in a separate thread
+        import uvicorn
+
+        server_thread = threading.Thread(
+            target=lambda: uvicorn.run(app, host="127.0.0.1", port=8000)
+        )
+        server_thread.daemon = (
+            True  # This ensures the thread will exit when the main program exits
+        )
+        server_thread.start()
+
+        # Give the server a moment to start
+        time.sleep(2)
+
+        print("FastAPI server is running at http://127.0.0.1:8000")
+        print(
+            "You can access the emergencies endpoint at http://127.0.0.1:8000/emergencies"
+        )
+
         # Load image
         image = Image.open("./image7.png")
         response = await agent.step(image)
@@ -688,6 +715,14 @@ async def main():
         image = Image.open("./image11.png")
         response = await agent.step(image)
         print(f"Response: {response}")
+
+        # Keep the main thread running
+        try:
+            while True:
+                await asyncio.sleep(1)
+        except KeyboardInterrupt:
+            print("Shutting down server...")
+
     except Exception as e:
         print(f"Error in main: {str(e)}")
     finally:
