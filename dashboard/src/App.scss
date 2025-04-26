@@ -89,3 +89,14 @@
 .read-the-docs {
   @extend .app__docs;
 } 
+
+// Fix for mobile iOS
+@supports (-webkit-touch-callout: none) {
+  html, body, #root {
+    height: -webkit-fill-available;
+  }
+  
+  .app__container {
+    min-height: -webkit-fill-available;
+  }
+} 

@@ -237,6 +237,17 @@
       letter-spacing: -0.01em;
     }
   }
+
+  &__card-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    width: 100%;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
 }
 
 /* Media queries */
