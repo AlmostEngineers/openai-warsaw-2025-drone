@@ -1,6 +1,6 @@
 import os
 
-from agents import Agent, Runner, function_tool, trace
+from agents import Agent, RunContextWrapper, Runner, function_tool, trace
 
 from playsound import playsound
 from agents import (
@@ -146,8 +146,8 @@ def analyze_image(image_encoded: str) -> str:
                 },
             ],
         )
-    except e:
-        print(e)
+    except Exception as e:
+        raise Exception("Error analyzing image: ", e)
 
     # print("response", response)
     return response.output_text
@@ -274,9 +274,11 @@ class DroneAgent:
         call_siren_callback,
     ):
         self.state = "PATROL"
+        self.context = {}  # Initialize empty context
 
         @function_tool
         def change_state(
+            wrapper: RunContextWrapper[dict],
             new_state: Literal[
                 "PATROL",
                 "INVESTIGATION",
@@ -285,7 +287,7 @@ class DroneAgent:
             ],
         ):
             self.state = new_state
-            print("State changed to " + new_state)
+            self.context = wrapper.context
             return "Switched to " + new_state
 
         @function_tool
@@ -330,12 +332,18 @@ class DroneAgent:
             )
             print(f"Severity level: {severity}")
 
+            # Get the current image from context
+            current_image = ""
+            if hasattr(self, "context") and isinstance(self.context, dict):
+                current_image = self.context.get("image", "")
+
             # Add emergency to the server
             add_emergency(
                 emergency_type=emergency_type,
                 location=location,
                 severity=severity,
                 description=f"Emergency detected at coordinates {location} with severity {severity}",
+                image=current_image,
             )
 
             return f"Emergency services have been notified about {emergency_type} at location {location}"
@@ -605,7 +613,7 @@ class DroneAgent:
 
             # Encode image to base64
             image_encoded = encode_image_to_base64(image)
-
+            
             # Analyze image
             with trace("drone_operation"):
                 img_desc = analyze_image(image_encoded)
@@ -615,17 +623,25 @@ class DroneAgent:
                     end="\n --- end of image description ---\n\n",
                 )
 
+                # Add the image to the context
+                context = {
+                    "image": image_encoded,
+                    "image_description": img_desc,
+                }
+
                 if self.state == "PATROL":
                     result = await Runner.run(
                         self.drone_operator_agent,
                         input=f"""Analyze the image and determine if investigation is needed.
                         Image analysis: {img_desc}""",
+                        context=context,
                     )
                 elif self.state == "INVESTIGATION":
                     result = await Runner.run(
                         self.investigation_agent,
                         input=f"""Investigate the objects detected in this image.
                         Image description: {img_desc}""",
+                        context=context,
                     )
                 elif self.state == "EMERGENCY_HANDLING":
                     result = await Runner.run(
@@ -635,6 +651,7 @@ class DroneAgent:
                         
                         If the situation is resolved or emergency services have arrived, change state to PATROL.
                         Otherwise, continue emergency response and observe.""",
+                        context=context,
                     )
                 elif self.state == "NON_EMERGENCY_HANDLING":
                     result = await Runner.run(
@@ -644,6 +661,7 @@ class DroneAgent:
                         
                         If the situation is resolved or maintenance is complete, change state to PATROL.
                         Otherwise, continue maintenance operations.""",
+                        context=context,
                     )
                 else:
                     raise ValueError(f"Unknown state: {self.state}")
@@ -708,7 +726,7 @@ async def main():
         )
 
         # Load image
-        image = Image.open("./image7.png")
+        image = Image.open("./image6.png")
         response = await agent.step(image)
         print(f"Response: {response}")
         print("---------------------------")

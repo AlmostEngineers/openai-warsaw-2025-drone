@@ -24,6 +24,7 @@ class Emergency(BaseModel):
     severity: int
     timestamp: datetime.datetime
     description: str = ""
+    image: str = ""  # Base64 encoded image
 
 
 # In-memory storage for emergencies
@@ -52,6 +53,7 @@ def add_emergency(
     location: Dict[str, float],
     severity: int,
     description: str = "",
+    image: str = "",
 ) -> Emergency:
     """Add a new emergency to the list"""
     emergency = Emergency(
@@ -61,6 +63,7 @@ def add_emergency(
         severity=severity,
         timestamp=datetime.datetime.now(),
         description=description,
+        image=image,
     )
     emergencies.append(emergency)
     return emergency
